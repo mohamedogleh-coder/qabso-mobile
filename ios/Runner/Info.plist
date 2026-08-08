@@ -47,5 +47,9 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Qabso Mobile uses your location to show nearby stadiums and fields.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Qabso Mobile needs access to your photos so you can set a profile picture.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Qabso Mobile needs access to your camera so you can take a profile picture.</string>
 </dict>
 </plist>

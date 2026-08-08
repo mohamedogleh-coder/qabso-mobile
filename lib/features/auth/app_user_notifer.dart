@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,9 +15,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 /// State is `null` when there is no authenticated user, or when the
 /// authenticated user has no `app_users` profile yet.
 final appUserNotifierProvider =
-    AsyncNotifierProvider<AppUserNotifier, AppUserModel?>(
-      AppUserNotifier.new,
-    );
+    AsyncNotifierProvider<AppUserNotifier, AppUserModel?>(AppUserNotifier.new);
 
 class AppUserNotifier extends AsyncNotifier<AppUserModel?> {
   AuthRepository get _repository => ref.read(authRepositoryProvider);
@@ -46,12 +46,17 @@ class AppUserNotifier extends AsyncNotifier<AppUserModel?> {
   }
 
   /// Updates editable profile fields through [AuthRepository] and syncs state.
-  Future<void> updateUserInfo({String? fullName, String? phoneNumber}) async {
+  Future<void> updateUserInfo({
+    String? fullName,
+    String? phoneNumber,
+    File? avatarFile,
+  }) async {
     state = const AsyncLoading();
     try {
       final user = await _repository.updateUserInfo(
         fullName: fullName,
         phoneNumber: phoneNumber,
+        avatarFile: avatarFile,
       );
       state = AsyncData(user);
     } catch (e, st) {

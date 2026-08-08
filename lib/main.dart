@@ -7,7 +7,7 @@ import 'features/auth/app_user_notifer.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/registration_screen.dart';
 import 'themes/app_theme.dart';
-import 'utils/app_utility_service.dart';
+import 'utill/app_utility_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -146,7 +146,9 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () async{
+          await Supabase.instance.client.auth.signOut();
+        },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
