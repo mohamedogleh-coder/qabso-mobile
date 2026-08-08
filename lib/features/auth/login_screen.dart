@@ -58,7 +58,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) setState(() => _isSubmitting = false);
     }
     // On success, AppUserNotifier reacts to the resulting auth-state change
-    // and AuthGate re-routes automatically — no navigation needed here.
   }
 
   Future<void> _loginWithPassword() async {
@@ -86,12 +85,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.transparent),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -108,17 +107,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Text(
                       'Welcome back',
                       textAlign: TextAlign.center,
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: textTheme.headlineLarge,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Sign in to continue booking your favorite fields.',
                       textAlign: TextAlign.center,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      style: textTheme.bodySmall,
                     ),
                     const SizedBox(height: 32),
                     if (_errorMessage != null) ...[
@@ -152,12 +147,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _emailController,
                       label: 'Email',
                       hintText: 'you@example.com',
+                      capitalize: false,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.email_outlined,
                       enabled: !_isSubmitting,
                       validator: _validateEmail,
                     ),
+                    const SizedBox(height: 8),
                     AppInputTextWidget(
                       controller: _passwordController,
                       label: 'Password',
@@ -168,8 +165,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       enabled: !_isSubmitting,
                       validator: _validatePassword,
                     ),
-                    const SizedBox(height: 16),
-                    FilledButton(
+                    const SizedBox(height: 24),
+                    ElevatedButton(
                       onPressed: _isSubmitting ? null : _loginWithPassword,
                       child: _isSubmitting
                           ? const SizedBox(
@@ -227,5 +224,3 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
-
-

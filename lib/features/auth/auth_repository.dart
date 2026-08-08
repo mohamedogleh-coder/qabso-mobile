@@ -40,10 +40,7 @@ class AuthRepository {
     await _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  /// Starts the Google OAuth sign-in flow in an external browser.
-  ///
-  /// Completion happens asynchronously via the deep-link redirect; listen to
-  /// [onAuthStateChange] to observe the resulting session.
+
   Future<void> signInWithGoogle() async {
     await _client.auth.signInWithOAuth(OAuthProvider.google);
   }
@@ -54,6 +51,11 @@ class AuthRepository {
   /// [onAuthStateChange] to observe the resulting session.
   Future<void> signInWithFacebook() async {
     await _client.auth.signInWithOAuth(OAuthProvider.facebook);
+  }
+
+  /// Signs the current user out.
+  Future<void> signOut() async {
+    await _client.auth.signOut();
   }
 
   /// Returns the `app_users` profile for the current Supabase Auth user.

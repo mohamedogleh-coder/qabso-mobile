@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qabso_mobile/themes/dark_theme.dart';
+import 'package:qabso_mobile/themes/light_theme.dart';
+import 'package:qabso_mobile/utill/app_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'features/auth/app_user_notifer.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/registration_screen.dart';
-import 'themes/app_theme.dart';
 import 'utill/app_utility_service.dart';
 
 void main() async {
@@ -34,8 +36,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: lightTheme,
+      darkTheme: darkTheme,
       themeMode: ThemeMode.system,
       home: const AuthGate(),
     );
@@ -49,15 +51,31 @@ class AuthGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appUserAsync = ref.watch(appUserNotifierProvider);
     final authUser = Supabase.instance.client.auth.currentUser;
-
     if (authUser == null) {
       return const LoginScreen();
     }
     return appUserAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) =>
-          Scaffold(body: Center(child: Text('Something went wrong: $error'))),
+      error: (error, _) => Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Something went wrong. Please try again.'),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () =>
+                      ref.read(appUserNotifierProvider.notifier).refresh(),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
       data: (appUser) {
         if (appUser == null) {
           return const RegistrationScreen();
@@ -68,7 +86,7 @@ class AuthGate extends ConsumerWidget {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends ConsumerStatefulWidget {
   const MyHomePage({super.key, required this.title});
 
   // This widget is the home page of your application. It is stateful, meaning
@@ -83,10 +101,10 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  ConsumerState<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends ConsumerState<MyHomePage> {
   int _counter = 0;
 
   void _incrementCounter() {
@@ -102,6 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final appUser = ref.watch(appUserNotifierProvider);
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -137,17 +156,21 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: .center,
           children: [
-            const Text('You have pushed the button this many times:'),
+            Text(
+              'Welcome ${appUser.value?.fullName} your role is ${appUser.value?.role}',
+            ),
             Text(
               '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium!.copyWith(color: AppConstants.primary),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async{
-          await Supabase.instance.client.auth.signOut();
+        onPressed: () async {
+          await ref.read(authRepositoryProvider).signOut();
         },
         tooltip: 'Increment',
         child: const Icon(Icons.add),

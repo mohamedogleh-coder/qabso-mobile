@@ -22,6 +22,7 @@ class AppInputTextWidget extends StatefulWidget {
   final String? counterText;
   final String? helperText;
   final String? value;
+  final bool capitalize;
   final double verticalPadding;
   final TextAlign? textAlign;
   final List<TextInputFormatter>? inputFormatters;
@@ -47,10 +48,11 @@ class AppInputTextWidget extends StatefulWidget {
     this.counterText,
     this.inputFormatters,
     this.value,
-    this.verticalPadding = 12,
+    this.verticalPadding = 16,
     this.filledColor,
     this.textAlign,
     this.errorFontSize,
+    this.capitalize = true,
   });
 
   @override
@@ -70,7 +72,9 @@ class _AppInputTextWidgetState extends State<AppInputTextWidget> {
         controller: widget.controller,
         keyboardType: widget.keyboardType,
         textAlign: widget.textAlign ?? TextAlign.start,
-        textCapitalization: TextCapitalization.sentences,
+        textCapitalization: widget.capitalize?
+             TextCapitalization.sentences
+            : TextCapitalization.none,
         obscureText: widget.obscureText && !showHideToggle,
         enabled: widget.enabled,
         focusNode: widget.focusNode,
@@ -80,7 +84,6 @@ class _AppInputTextWidgetState extends State<AppInputTextWidget> {
         maxLength: widget.maxLength,
         maxLines: widget.obscureText ? 1 : widget.maxLines,
         inputFormatters: widget.inputFormatters,
-
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
@@ -116,6 +119,7 @@ class _AppInputTextWidgetState extends State<AppInputTextWidget> {
                     showHideToggle
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 )
               : widget.suffixIcon != null

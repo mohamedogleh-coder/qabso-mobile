@@ -10,6 +10,15 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
 });
 
+/// Auth events that can actually change which profile should be loaded.
+/// Excludes things like token refreshes, which don't change who's signed in
+/// — refetching the profile for those would be a wasted request.
+const _profileRelevantEvents = {
+  AuthChangeEvent.signedIn,
+  AuthChangeEvent.signedOut,
+  AuthChangeEvent.userUpdated,
+};
+
 /// Holds the current [AppUserModel] profile for the signed-in user.
 ///
 /// State is `null` when there is no authenticated user, or when the
@@ -20,15 +29,32 @@ final appUserNotifierProvider =
 class AppUserNotifier extends AsyncNotifier<AppUserModel?> {
   AuthRepository get _repository => ref.read(authRepositoryProvider);
 
+  // Guards against out-of-order results when requests overlap (e.g. a rapid
+  // sign-out immediately followed by a sign-in, or an auth event landing
+  // mid-refresh): only the response to the most recently issued request is
+  // allowed to update state.
+  int _requestId = 0;
+
   @override
   Future<AppUserModel?> build() async {
-    // Re-evaluate the profile whenever Supabase Auth state actually changes
-    // (sign-in, sign-out, token refresh, etc), skipping the replayed initial
-    // event since we already fetch below.
-    final subscription = _repository.onAuthStateChange.listen((authState) {
-      if (authState.event == AuthChangeEvent.initialSession) return;
-      fetchUser();
-    });
+    // Re-evaluate the profile when Supabase Auth state actually changes who
+    // is signed in. Skips the replayed initial event (already covered by the
+    // fetch below) and events that don't affect identity, like token
+    // refreshes.
+    //
+    // An onError handler is required here: per Supabase's docs, network
+    // errors on this stream (e.g. a failed token refresh while offline) are
+    // rethrown as unhandled zone exceptions — and crash the app — if no
+    // handler is supplied.
+    final subscription = _repository.onAuthStateChange.listen(
+      (authState) {
+        if (!_profileRelevantEvents.contains(authState.event)) return;
+        fetchUser();
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        state = AsyncError(error, stackTrace);
+      },
+    );
     ref.onDispose(subscription.cancel);
 
     return _repository.getCurrentAppUser();
@@ -36,11 +62,14 @@ class AppUserNotifier extends AsyncNotifier<AppUserModel?> {
 
   /// Fetches the current app user through [AuthRepository] and updates state.
   Future<void> fetchUser() async {
+    final requestId = ++_requestId;
     state = const AsyncLoading();
     try {
       final user = await _repository.getCurrentAppUser();
+      if (requestId != _requestId) return;
       state = AsyncData(user);
     } catch (e, st) {
+      if (requestId != _requestId) return;
       state = AsyncError(e, st);
     }
   }
@@ -51,6 +80,7 @@ class AppUserNotifier extends AsyncNotifier<AppUserModel?> {
     String? phoneNumber,
     File? avatarFile,
   }) async {
+    final requestId = ++_requestId;
     state = const AsyncLoading();
     try {
       final user = await _repository.updateUserInfo(
@@ -58,8 +88,10 @@ class AppUserNotifier extends AsyncNotifier<AppUserModel?> {
         phoneNumber: phoneNumber,
         avatarFile: avatarFile,
       );
+      if (requestId != _requestId) return;
       state = AsyncData(user);
     } catch (e, st) {
+      if (requestId != _requestId) return;
       state = AsyncError(e, st);
     }
   }

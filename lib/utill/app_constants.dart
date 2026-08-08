@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 abstract class AppConstants {
-
-
-  static int maxAppCapacity=6;
-  static int maxAppExtra=6;
+  static int maxAppCapacity = 6;
+  static int maxAppExtra = 6;
 
   // --- BRAND / PRIMARY COLORS ---
   static const Color primary = Color(0xFF388E3C);

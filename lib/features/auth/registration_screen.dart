@@ -84,104 +84,100 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.transparent),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Complete your profile',
-                      textAlign: TextAlign.center,
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Complete your profile',
+                  textAlign: TextAlign.center,
+                  style: textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tell us a bit about yourself to finish setting up your account.',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tell us a bit about yourself to finish setting up your account.',
-                      textAlign: TextAlign.center,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    if (_errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: colorScheme.onErrorContainer,
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
                               color: colorScheme.onErrorContainer,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: TextStyle(
-                                  color: colorScheme.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    Center(
-                      child: AppImagePickerWidget(
-                        size: 110,
-                        enabled: !_isSubmitting,
-                        onChanged: (file) => setState(() => _avatarFile = file),
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    AppInputTextWidget(
-                      controller: _fullNameController,
-                      label: 'Full name',
-                      hintText: 'Your full name',
-                      textInputAction: TextInputAction.next,
-                      prefixIcon: Icons.person_outline,
-                      enabled: !_isSubmitting,
-                      validator: _validateFullName,
-                    ),
-                    AppInputTextWidget(
-                      controller: _phoneNumberController,
-                      label: 'Phone number',
-                      hintText: '+252 61 234 5678',
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.done,
-                      prefixIcon: Icons.phone_outlined,
-                      enabled: !_isSubmitting,
-                      validator: _validatePhoneNumber,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _isSubmitting ? null : _submit,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.4,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Finish setting up'),
-                    ),
-                  ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Center(
+                  child: AppImagePickerWidget(
+                    size: 110,
+                    enabled: !_isSubmitting,
+                    onChanged: (file) => setState(() => _avatarFile = file),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                AppInputTextWidget(
+                  controller: _fullNameController,
+                  label: 'Full name',
+                  hintText: 'Your full name',
+                  textInputAction: TextInputAction.next,
+                  prefixIcon: Icons.person_outline,
+                  enabled: !_isSubmitting,
+                  validator: _validateFullName,
+                ),
+                AppInputTextWidget(
+                  controller: _phoneNumberController,
+                  label: 'Phone number',
+                  hintText: '+252 61 234 5678',
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.done,
+                  prefixIcon: Icons.phone_outlined,
+                  enabled: !_isSubmitting,
+                  validator: _validatePhoneNumber,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Finish setting up'),
+                ),
+              ],
             ),
           ),
         ),

@@ -82,20 +82,23 @@ class _AppImagePickerWidgetState extends State<AppImagePickerWidget> {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
-              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
-              onTap: () => Navigator.of(context).pop(ImageSource.camera),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from gallery'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Take a photo'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -122,7 +125,7 @@ class _AppImagePickerWidgetState extends State<AppImagePickerWidget> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: colorScheme.surfaceContainerHighest,
-                  border: Border.all(color: colorScheme.outlineVariant),
+                  border: Border.all(color: colorScheme.primary),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: _isPicking
