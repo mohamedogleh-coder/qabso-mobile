@@ -3,12 +3,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qabso_mobile/themes/dark_theme.dart';
 import 'package:qabso_mobile/themes/light_theme.dart';
-import 'package:qabso_mobile/utill/app_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'features/auth/app_user_model.dart';
 import 'features/auth/app_user_notifer.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/registration_screen.dart';
+import 'features/manager/manager_shell.dart';
+import 'features/user/user_shell.dart';
 import 'utill/app_utility_service.dart';
 
 void main() async {
@@ -80,101 +82,14 @@ class AuthGate extends ConsumerWidget {
         if (appUser == null) {
           return const RegistrationScreen();
         }
-        return const MyHomePage(title: 'Flutter Demo Home Page');
+        return switch (appUser.role) {
+          AppUserRole.manager => const ManagerShell(),
+          AppUserRole.user => const UserShell(),
+          AppUserRole.referee => const Scaffold(
+            body: Center(child: Text('Referee experience is coming soon.')),
+          ),
+        };
       },
-    );
-  }
-}
-
-class MyHomePage extends ConsumerStatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  ConsumerState<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends ConsumerState<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final appUser = ref.watch(appUserNotifierProvider);
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            Text(
-              'Welcome ${appUser.value?.fullName} your role is ${appUser.value?.role}',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium!.copyWith(color: AppConstants.primary),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await ref.read(authRepositoryProvider).signOut();
-        },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

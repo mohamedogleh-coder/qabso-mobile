@@ -88,134 +88,132 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.transparent),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Icon(
-                      Symbols.handshake,
-                      size: 56,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Welcome back',
-                      textAlign: TextAlign.center,
-                      style: textTheme.headlineLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Sign in to continue booking your favorite fields.',
-                      textAlign: TextAlign.center,
-                      style: textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 32),
-                    if (_errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: colorScheme.onErrorContainer,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: TextStyle(
-                                  color: colorScheme.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Symbols.handshake,
+                    size: 56,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Welcome back',
+                    textAlign: TextAlign.center,
+                    style: textTheme.headlineLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sign in to continue booking your favorite fields.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 32),
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                    AppInputTextWidget(
-                      controller: _emailController,
-                      label: 'Email',
-                      hintText: 'you@example.com',
-                      capitalize: false,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      prefixIcon: Icons.email_outlined,
-                      enabled: !_isSubmitting,
-                      validator: _validateEmail,
-                    ),
-                    const SizedBox(height: 8),
-                    AppInputTextWidget(
-                      controller: _passwordController,
-                      label: 'Password',
-                      hintText: 'Enter your password',
-                      obscureText: true,
-                      textInputAction: TextInputAction.done,
-                      prefixIcon: Icons.lock_outline,
-                      enabled: !_isSubmitting,
-                      validator: _validatePassword,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _isSubmitting ? null : _loginWithPassword,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.4,
-                                color: Colors.white,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: colorScheme.onErrorContainer,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: colorScheme.onErrorContainer,
                               ),
-                            )
-                          : const Text('Log in'),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(color: colorScheme.outlineVariant),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'or continue with',
-                            style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: Divider(color: colorScheme.outlineVariant),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    OutlinedButton.icon(
-                      onPressed: _isSubmitting ? null : _loginWithGoogle,
-                      icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                      label: const Text('Continue with Google'),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: _isSubmitting ? null : _loginWithFacebook,
-                      icon: const Icon(
-                        Icons.facebook,
-                        color: Color(0xFF1877F2),
+                        ],
                       ),
-                      label: const Text('Continue with Facebook'),
                     ),
+                    const SizedBox(height: 16),
                   ],
-                ),
+                  AppInputTextWidget(
+                    controller: _emailController,
+                    label: 'Email',
+                    hintText: 'you@example.com',
+                    capitalize: false,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    prefixIcon: Icons.email_outlined,
+                    enabled: !_isSubmitting,
+                    validator: _validateEmail,
+                  ),
+                  const SizedBox(height: 8),
+                  AppInputTextWidget(
+                    controller: _passwordController,
+                    label: 'Password',
+                    hintText: 'Enter your password',
+                    obscureText: true,
+                    textInputAction: TextInputAction.done,
+                    prefixIcon: Icons.lock_outline,
+                    enabled: !_isSubmitting,
+                    validator: _validatePassword,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isSubmitting ? null : _loginWithPassword,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Log in'),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(color: colorScheme.outlineVariant),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or continue with',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(color: colorScheme.outlineVariant),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: _isSubmitting ? null : _loginWithGoogle,
+                    icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
+                    label: const Text('Continue with Google'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isSubmitting ? null : _loginWithFacebook,
+                    icon: const Icon(
+                      Icons.facebook,
+                      color: Color(0xFF1877F2),
+                    ),
+                    label: const Text('Continue with Facebook'),
+                  ),
+                ],
               ),
             ),
           ),
