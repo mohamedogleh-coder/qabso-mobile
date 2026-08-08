@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 abstract class AppComponentThemes {
   const AppComponentThemes._();
 
-  static const BorderRadius _fieldRadius = BorderRadius.all(Radius.circular(12));
-  static const BorderRadius _buttonRadius = BorderRadius.all(Radius.circular(12));
-  static const BorderRadius _cardRadius = BorderRadius.all(Radius.circular(16));
+  static const BorderRadius _fieldRadius = BorderRadius.all(Radius.circular(8));
+  static const BorderRadius _buttonRadius = BorderRadius.all(
+    Radius.circular(8),
+  );
+  static const BorderRadius _cardRadius = BorderRadius.all(Radius.circular(8));
 
   static AppBarThemeData appBarTheme(ColorScheme colorScheme) {
     return AppBarThemeData(
@@ -41,7 +43,9 @@ abstract class AppComponentThemes {
     );
   }
 
-  static InputDecorationThemeData inputDecorationTheme(ColorScheme colorScheme) {
+  static InputDecorationThemeData inputDecorationTheme(
+    ColorScheme colorScheme,
+  ) {
     final OutlineInputBorder baseBorder = OutlineInputBorder(
       borderRadius: _fieldRadius,
       borderSide: BorderSide(color: colorScheme.outline),
@@ -90,7 +94,7 @@ abstract class AppComponentThemes {
       style: FilledButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         shape: const RoundedRectangleBorder(borderRadius: _buttonRadius),
       ),
     );

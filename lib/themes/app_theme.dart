@@ -4,16 +4,6 @@ import '../utill/app_constants.dart';
 import 'app_color_schemes.dart';
 import 'app_component_themes.dart';
 
-/// Central access point for the app's Material 3 themes.
-///
-/// Usage:
-/// ```dart
-/// MaterialApp(
-///   theme: AppTheme.lightTheme,
-///   darkTheme: AppTheme.darkTheme,
-///   themeMode: ThemeMode.system,
-/// )
-/// ```
 abstract class AppTheme {
   const AppTheme._();
 
@@ -27,11 +17,14 @@ abstract class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor:
-          isLight ? AppConstants.lightBackground : AppConstants.darkBackground,
+      scaffoldBackgroundColor: isLight
+          ? AppConstants.lightBackground
+          : AppConstants.darkBackground,
       appBarTheme: AppComponentThemes.appBarTheme(colorScheme),
       cardTheme: AppComponentThemes.cardTheme(colorScheme),
-      inputDecorationTheme: AppComponentThemes.inputDecorationTheme(colorScheme),
+      inputDecorationTheme: AppComponentThemes.inputDecorationTheme(
+        colorScheme,
+      ),
       elevatedButtonTheme: AppComponentThemes.elevatedButtonTheme(colorScheme),
       filledButtonTheme: AppComponentThemes.filledButtonTheme(colorScheme),
       outlinedButtonTheme: AppComponentThemes.outlinedButtonTheme(colorScheme),

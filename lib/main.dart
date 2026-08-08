@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'features/auth/app_user_notifer.dart';
+import 'features/auth/login_screen.dart';
+import 'features/auth/registration_screen.dart';
 import 'themes/app_theme.dart';
 import 'utils/app_utility_service.dart';
 
@@ -19,21 +23,47 @@ void main() async {
     print(e);
   }
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appUserAsync = ref.watch(appUserNotifierProvider);
+    final authUser = Supabase.instance.client.auth.currentUser;
+
+    if (authUser == null) {
+      return const LoginScreen();
+    }
+    return appUserAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, _) =>
+          Scaffold(body: Center(child: Text('Something went wrong: $error'))),
+      data: (appUser) {
+        if (appUser == null) {
+          return const RegistrationScreen();
+        }
+        return const MyHomePage(title: 'Flutter Demo Home Page');
+      },
     );
   }
 }
