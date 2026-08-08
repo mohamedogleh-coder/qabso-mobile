@@ -1,11 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'themes/app_theme.dart';
+import 'utils/app_utility_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    publishableKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY']!,
+  );
+
+  try {
+    await AppUtilityService.getCurrentLocation();
+  } catch (e) {
+    print(e);
+  }
+
   runApp(const MyApp());
 }
 
