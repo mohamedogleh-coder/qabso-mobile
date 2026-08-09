@@ -28,4 +28,10 @@ class StadiumNotifierProvider extends AsyncNotifier<StadiumModel?> {
       () => StadiumRepository.getCurrentManagerStadium(),
     );
   }
+
+  Future<void> saveStadium(StadiumModel model) async {
+    state = await AsyncValue.guard(
+      () => StadiumRepository.upsertStadium(model: model),
+    );
+  }
 }

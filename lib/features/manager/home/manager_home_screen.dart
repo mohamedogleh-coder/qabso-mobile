@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
 
-class ManagerHomeScreen extends ConsumerWidget {
-  const ManagerHomeScreen({super.key});
+import '../stadium/stadium_model.dart';
+
+class ManagerHomeScreen extends StatelessWidget {
+  const ManagerHomeScreen({super.key, required this.stadium});
+
+  final StadiumModel stadium;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final stadium = ref.watch(stadiumNotifierProvider).value;
-    if (stadium == null) {
-      return Center(child: Text("No stadium"));
-    }
+  Widget build(BuildContext context) {
     return Scaffold(appBar: AppBar(title: Text(stadium.stadiumName)));
   }
 }

@@ -170,7 +170,10 @@ class _ConfirmationDialogState extends State<_ConfirmationDialog> {
           children: [
             if (widget.icon != null) ...[
               Center(
-                child: _IconBadge(icon: widget.icon!, color: resolvedConfirmColor),
+                child: _IconBadge(
+                  icon: widget.icon!,
+                  color: resolvedConfirmColor,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -187,7 +190,9 @@ class _ConfirmationDialogState extends State<_ConfirmationDialog> {
             else if (widget.message != null)
               Text(
                 widget.message!,
-                textAlign: widget.icon == null ? TextAlign.start : TextAlign.center,
+                textAlign: widget.icon == null
+                    ? TextAlign.start
+                    : TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colors.onSurfaceVariant,
                 ),
@@ -203,14 +208,18 @@ class _ConfirmationDialogState extends State<_ConfirmationDialog> {
         ),
         actions: [
           TextButton(
-            onPressed: _isSubmitting ? null : () => Navigator.pop(context, false),
+            onPressed: _isSubmitting
+                ? null
+                : () => Navigator.pop(context, false),
             child: Text(
               widget.cancelText,
               style: TextStyle(color: colors.tertiary),
             ),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: resolvedConfirmColor),
+            style: FilledButton.styleFrom(
+              backgroundColor: resolvedConfirmColor,
+            ),
             onPressed: _isSubmitting ? null : _handleConfirm,
             child: _isSubmitting
                 ? const SizedBox(
@@ -345,7 +354,8 @@ Future<void> _showIconAlertDialog({
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: onButtonPressed ?? () => Navigator.of(dialogContext).pop(),
+                onPressed:
+                    onButtonPressed ?? () => Navigator.of(dialogContext).pop(),
                 child: Text(buttonText),
               ),
             ),
@@ -438,7 +448,12 @@ Future<T?> showAppBottomSheet<T>({
           children: [
             if (title != null)
               Padding(
-                padding: EdgeInsets.fromLTRB(20, showDragHandle ? 4 : 20, 20, 12),
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  showDragHandle ? 4 : 20,
+                  20,
+                  12,
+                ),
                 child: Text(
                   title,
                   style: Theme.of(sheetContext).textTheme.headlineMedium,
@@ -520,27 +535,14 @@ Future<T?> showAppActionSheet<T>({
 // Snack bars
 // -----------------------------------------------------------------------
 
-void showSuccessSnackBar({
+/// Shared shell behind [showSuccessSnackBar], [showErrorSnackBar], and
+/// [showInfoSnackBar] so the three read as one consistent system: same
+/// shape, duration, and an icon that matches the dialog styling above.
+void _showAppSnackBar({
   required BuildContext context,
   required String message,
-  Widget? trailing,
-}) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppConstants.success,
-        duration: const Duration(seconds: 3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-}
-
-void showErrorSnackBar({
-  required BuildContext context,
-  required String message,
+  required Color backgroundColor,
+  required IconData icon,
   String? actionTitle,
   VoidCallback? onTap,
 }) {
@@ -548,14 +550,79 @@ void showErrorSnackBar({
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(message, style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Theme.of(context).colorScheme.error,
+        backgroundColor: backgroundColor,
         duration: const Duration(seconds: 3),
-        action: actionTitle != null
-            ? SnackBarAction(label: actionTitle, onPressed: onTap!)
+        action: actionTitle != null && onTap != null
+            ? SnackBarAction(
+                label: actionTitle,
+                onPressed: onTap,
+                textColor: Colors.white,
+              )
             : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+}
+
+/// A brief, non-blocking confirmation that something succeeded.
+void showSuccessSnackBar({
+  required BuildContext context,
+  required String message,
+  String? actionTitle,
+  VoidCallback? onTap,
+}) {
+  _showAppSnackBar(
+    context: context,
+    message: message,
+    backgroundColor: AppConstants.success,
+    icon: Symbols.check_circle_rounded,
+    actionTitle: actionTitle,
+    onTap: onTap,
+  );
+}
+
+/// A brief, non-blocking error notice. For a failure the user needs to act
+/// on (retry, open settings, ...), prefer [showAppErrorDialog] instead —
+/// a snackbar can be missed or swiped away before it's read.
+void showErrorSnackBar({
+  required BuildContext context,
+  required String message,
+  String? actionTitle,
+  VoidCallback? onTap,
+}) {
+  _showAppSnackBar(
+    context: context,
+    message: message,
+    backgroundColor: Theme.of(context).colorScheme.error,
+    icon: Symbols.error_rounded,
+    actionTitle: actionTitle,
+    onTap: onTap,
+  );
+}
+
+/// A brief, non-blocking informational notice.
+void showInfoSnackBar({
+  required BuildContext context,
+  required String message,
+  String? actionTitle,
+  VoidCallback? onTap,
+}) {
+  _showAppSnackBar(
+    context: context,
+    message: message,
+    backgroundColor: Theme.of(context).colorScheme.tertiary,
+    icon: Symbols.info_rounded,
+    actionTitle: actionTitle,
+    onTap: onTap,
+  );
 }

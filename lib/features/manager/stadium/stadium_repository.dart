@@ -21,4 +21,30 @@ class StadiumRepository {
 
     return StadiumModel.fromJson(row);
   }
+
+  static Future<StadiumModel> upsertStadium({
+    required StadiumModel model,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('Cannot save stadium: no authenticated user.');
+    }
+
+    final stadiumId =
+        await _client.rpc(
+              'upsert_stadium',
+              params: {
+                'p_stadium_id': model.stadiumId,
+                'p_stadium_name': model.stadiumName,
+                'p_extra_time': model.extraTime,
+                'p_latitude': model.latitude,
+                'p_longitude': model.longitude,
+                'p_allow_half_booking': model.allowHalfBooking,
+                'p_manager_id': userId,
+              },
+            )
+            as String;
+
+    return model.copyWith(stadiumId: stadiumId);
+  }
 }

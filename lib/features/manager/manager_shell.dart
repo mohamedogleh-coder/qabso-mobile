@@ -27,58 +27,69 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
     final theme = Theme.of(context);
     final stadiumAsync = ref.watch(stadiumNotifierProvider);
 
-    final managerScreens = [
-      ManagerHomeScreen(),
-      Center(child: Text("data")),
-      Center(child: Text("data")),
-      StadiumSettingsScreen(),
-    ];
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: stadiumAsync.when(
-        data: (stadium) {
-          if (stadium == null) {
-            return Column(
-              mainAxisAlignment: .center,
-              children: [
-                const Icon(Symbols.stadium, size: 64),
-                const SizedBox(height: 12),
-                Text(
-                  "Stadium not exists",
-                  style: Theme.of(context).textTheme.headlineLarge,
-                ),
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StadiumSettingsScreen(),
-                      ),
-                    );
-                  },
-                  icon: Icon(Symbols.add),
-                  label: Text("Create new stadium"),
-                ),
-              ],
-            );
-          }
+    return stadiumAsync.when(
+      data: (stadium) {
+        if (stadium == null) {
           return Scaffold(
-            body: managerScreens[_selectedIndex],
-            bottomNavigationBar: AppBottomNavigation(
-              items: items,
-              selectedIndex: _selectedIndex,
-              onItemSelected: (index) => setState(() => _selectedIndex = index),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Symbols.stadium, size: 64),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Stadium not exists",
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        // push (not pushReplacement): keeps the shell on
+                        // the stack so StadiumSettingsScreen's own submit
+                        // handler has a route to pop back to on success.
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StadiumSettingsScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Symbols.add),
+                      label: const Text("Create new stadium"),
+                    ),
+                  ],
+                ),
+              ),
             ),
           );
-        },
-        error: (error, stackTrace) => ErrorRetryWidget(
+        }
+
+        final managerScreens = [
+          ManagerHomeScreen(stadium: stadium),
+          const Center(child: Text("data")),
+          const Center(child: Text("data")),
+          StadiumSettingsScreen(stadiumModel: stadium),
+        ];
+
+        return Scaffold(
+          body: managerScreens[_selectedIndex],
+          bottomNavigationBar: AppBottomNavigation(
+            items: items,
+            selectedIndex: _selectedIndex,
+            onItemSelected: (index) => setState(() => _selectedIndex = index),
+          ),
+        );
+      },
+      error: (error, stackTrace) => Scaffold(
+        body: ErrorRetryWidget(
           errorMessage: error.toString(),
           onRetry: () => ref.read(stadiumNotifierProvider.notifier).refresh(),
         ),
-        loading: () =>
-            Scaffold(appBar: AppBar(title: _buildTitleShimmer(theme))),
       ),
+      loading: () => Scaffold(appBar: AppBar(title: _buildTitleShimmer(theme))),
     );
   }
 
