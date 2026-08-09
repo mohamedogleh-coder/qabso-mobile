@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:qabso_mobile/features/manager/fields/fields_screen.dart';
 import 'package:qabso_mobile/features/manager/home/manager_home_screen.dart';
 import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
 import 'package:qabso_mobile/features/manager/stadium/stadium_settings_screen.dart';
@@ -69,7 +70,7 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
 
         final managerScreens = [
           ManagerHomeScreen(stadium: stadium),
-          const Center(child: Text("data")),
+      const    FieldsScreen(),
           const Center(child: Text("data")),
           StadiumSettingsScreen(stadiumModel: stadium),
         ];
