@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'menu_items_model.dart';
+import '../features/auth/menu_items_model.dart';
 
 class AppBottomNavigation extends StatelessWidget {
   const AppBottomNavigation({

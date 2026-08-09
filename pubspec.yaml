@@ -40,6 +40,8 @@ dependencies:
   flutter_riverpod: ^3.3.2
   material_symbols_icons: ^4.2960.0
   image_picker: ^1.2.3
+  equatable: ^2.1.0
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +67,7 @@ flutter:
 
   assets:
     - .env
+    - assets/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

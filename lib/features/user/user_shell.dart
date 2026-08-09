@@ -5,9 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../auth/app_user_model.dart';
 import '../auth/app_user_notifer.dart';
-import '../home/app_bottom_navigation.dart';
-import '../home/menu_items_model.dart';
-import '../home/placeholder_screen.dart';
+import '../../utill/app_bottom_navigation.dart';
+import '../auth/menu_items_model.dart';
 
 class UserShell extends ConsumerStatefulWidget {
   const UserShell({super.key});
@@ -35,7 +34,7 @@ class _UserShellState extends ConsumerState<UserShell> {
           ),
         ],
       ),
-      body: PlaceholderScreen(title: items[_selectedIndex].label),
+      body: Text(items[_selectedIndex].label),
       bottomNavigationBar: AppBottomNavigation(
         items: items,
         selectedIndex: _selectedIndex,

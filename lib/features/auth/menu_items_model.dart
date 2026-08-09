@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../../utill/app_constants.dart';
-import '../auth/app_user_model.dart';
+import 'app_user_model.dart';
 
 class MenuItemsModel {
   final IconData iconData;
