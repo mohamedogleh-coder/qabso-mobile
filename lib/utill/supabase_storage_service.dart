@@ -51,6 +51,27 @@ abstract class SupabaseStorageService {
     );
   }
 
+  /// Resolves the storage object path inside [bucket] that [url] points at —
+  /// the inverse of [getPublicUrl] (e.g.
+  /// `'https://…/storage/v1/object/public/playground/stadiums/a/b.png'` ->
+  /// `'stadiums/a/b.png'`). Any cache-busting query string is ignored.
+  ///
+  /// Returns `null` when [url] isn't a storage URL for this bucket, so
+  /// callers can refuse to delete rather than guess at a path.
+  static String? storagePathFromPublicUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+
+    // `.../object/{public|sign}/{bucket}/{path...}`
+    final segments = uri.pathSegments;
+    final objectIndex = segments.indexOf('object');
+    if (objectIndex == -1 || objectIndex + 3 >= segments.length) return null;
+    if (segments[objectIndex + 2] != bucket) return null;
+
+    final path = segments.sublist(objectIndex + 3).join('/');
+    return path.isEmpty ? null : path;
+  }
+
   /// Generates a random, collision-resistant filename that preserves
   /// [sourcePath]'s extension (e.g. `'.../photo.PNG'` ->
   /// `'1723150000000_a1b2c3d4.png'`), for callers that need a fresh unique

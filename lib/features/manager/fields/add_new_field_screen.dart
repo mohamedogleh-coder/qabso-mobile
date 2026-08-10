@@ -25,8 +25,22 @@ class AddNewFieldScreen extends ConsumerStatefulWidget {
 class _AddNewFieldScreenState extends ConsumerState<AddNewFieldScreen> {
   late FieldModel currenField;
   late bool isUpdate;
+
+  /// The field exactly as it is currently persisted, or `null` while
+  /// creating one that doesn't exist yet. Tracked separately from
+  /// `widget.fieldModel` because this screen can persist changes without
+  /// leaving (deleting an image), after which the saved baseline moves but
+  /// the widget's original argument doesn't.
+  FieldModel? _savedField;
+
   bool isSubmitting = false;
   List<File> _pickedImageFiles = [];
+
+  /// Rebuilt after images are uploaded so the picker drops the local
+  /// previews of files that are now network images, instead of showing each
+  /// of them twice.
+  Key _imagePickerKey = UniqueKey();
+
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -42,26 +56,35 @@ class _AddNewFieldScreenState extends ConsumerState<AddNewFieldScreen> {
     } else {
       isUpdate = true;
       currenField = widget.fieldModel!;
+      _savedField = widget.fieldModel;
     }
   }
 
-  bool get isChanged => widget.fieldModel != currenField;
+  /// Whether there's anything left to submit: either the form's values have
+  /// moved away from what's saved, or photos have been picked that aren't
+  /// uploaded yet (which is on its own enough to enable "Apply changes" on
+  /// an otherwise untouched field).
+  bool get isChanged =>
+      _savedField != currenField || _pickedImageFiles.isNotEmpty;
 
   /// Validates the form and saves [currenField] (create or update,
-  /// mirroring the stadium settings screen's flow). On a successful
-  /// create, any newly picked photos are then uploaded — never before the
-  /// field (and its id) exists. Reports the combined outcome and — on
-  /// success — leaves the screen if there's somewhere to go back to.
-  /// Guards against double taps and unsafe `context` use across the
-  /// awaited calls.
+  /// mirroring the stadium settings screen's flow). Once saved, any newly
+  /// picked photos are uploaded — never before the field (and its id)
+  /// exists. Reports the combined outcome and — on success — leaves the
+  /// screen if there's somewhere to go back to. Guards against double taps
+  /// and unsafe `context` use across the awaited calls.
   Future<void> _handleSubmit() async {
     if (isSubmitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    // Captured up front: [isUpdate] flips to true once the save lands, so
+    // it can no longer tell us which of the two this submission was.
+    final wasUpdate = isUpdate;
+
     setState(() => isSubmitting = true);
 
     try {
-      final saved = isUpdate
+      final saved = wasUpdate
           ? await ref
                 .read(fieldNotifierProvider.notifier)
                 .updateField(currenField)
@@ -69,25 +92,38 @@ class _AddNewFieldScreenState extends ConsumerState<AddNewFieldScreen> {
                 .read(fieldNotifierProvider.notifier)
                 .createField(currenField);
 
-      final imagesUploadedOk = await _uploadPickedImagesIfNeeded(saved);
+      final uploadResult = await _uploadPickedImagesIfNeeded(saved);
 
       if (!mounted) return;
       setState(() {
         isSubmitting = false;
-        currenField = saved;
+        currenField = uploadResult.model;
+        _savedField = uploadResult.model;
+        // The field now exists, so this screen is editing it from here on —
+        // without this, retrying after a failed image upload would run
+        // `createField` a second time and duplicate the field.
+        isUpdate = true;
+        if (uploadResult.imagesOk) {
+          _pickedImageFiles = [];
+          _imagePickerKey = UniqueKey();
+        }
       });
 
-      if (imagesUploadedOk) {
-        showSuccessSnackBar(
-          context: context,
-          message: isUpdate ? "Field updated." : "Field registered.",
-        );
-      } else {
+      // A failed upload keeps the screen open: the field itself is saved, but
+      // the picked files only exist here, so popping would throw away the
+      // user's only chance to retry them.
+      if (!uploadResult.imagesOk) {
         showErrorSnackBar(
           context: context,
           message: "Field saved, but some images failed to upload.",
         );
+        return;
       }
+
+      showSuccessSnackBar(
+        context: context,
+        message: wasUpdate ? "Field updated." : "Field registered.",
+      );
 
       final navigator = Navigator.of(context);
       if (navigator.canPop()) {
@@ -100,36 +136,90 @@ class _AddNewFieldScreenState extends ConsumerState<AddNewFieldScreen> {
     }
   }
 
-  /// Uploads any newly picked, not-yet-uploaded photos for a field that was
-  /// just created. Only ever runs after [saved] (and therefore its field
-  /// id) exists, and only for a brand new field — this screen doesn't yet
-  /// support attaching new photos when updating an existing one. Returns
-  /// `false` (rather than throwing) on failure, so a failed upload can't
-  /// undo the field save that already succeeded or leave [isSubmitting]
-  /// stuck.
-  Future<bool> _uploadPickedImagesIfNeeded(FieldModel saved) async {
-    if (isUpdate || _pickedImageFiles.isEmpty) return true;
+  /// Uploads the newly picked, not-yet-uploaded photos for [saved]. Only
+  /// ever runs after [saved] (and therefore its field id) exists, for both a
+  /// field that was just created and one that was just updated.
+  ///
+  /// Only [_pickedImageFiles] is uploaded — images already on the field are
+  /// left untouched in storage and in `field_images`, never re-uploaded or
+  /// duplicated. The freshly uploaded URLs are *appended* to
+  /// `saved.fieldImages`, which on an update still carries the field's
+  /// existing images (and on a create is empty), so the same merge covers
+  /// both modes.
+  ///
+  /// On success, returns [saved] with that merged list — public URLs, from
+  /// [FieldRepository.uploadFieldImages], which itself only ever persists
+  /// storage paths, never URLs — and also patches the field list's in-memory
+  /// state so it reflects them without a re-fetch. On failure, returns
+  /// [saved] unchanged with `imagesOk: false` — a failed upload can't undo
+  /// the field save that already succeeded or leave [isSubmitting] stuck.
+  Future<({FieldModel model, bool imagesOk})> _uploadPickedImagesIfNeeded(
+    FieldModel saved,
+  ) async {
+    if (_pickedImageFiles.isEmpty) {
+      return (model: saved, imagesOk: true);
+    }
 
     final stadiumId = ref.read(stadiumNotifierProvider).value?.stadiumId;
-    if (stadiumId == null || saved.id == null) return true;
+    if (stadiumId == null || saved.id == null) {
+      return (model: saved, imagesOk: false);
+    }
 
     try {
-      await FieldRepository.uploadFieldImages(
+      final newImageUrls = await FieldRepository.uploadFieldImages(
         stadiumId: stadiumId,
         fieldId: saved.id!,
         files: _pickedImageFiles,
       );
-      return true;
+      final allImageUrls = [...saved.fieldImages, ...newImageUrls];
+
+      ref
+          .read(fieldNotifierProvider.notifier)
+          .setFieldImages(saved.id!, allImageUrls);
+      return (model: saved.copyWith(fieldImages: allImageUrls), imagesOk: true);
     } catch (_) {
-      return false;
+      return (model: saved, imagesOk: false);
     }
+  }
+
+  /// Removes an already-uploaded image — its `field_images` row and its
+  /// storage file — then drops it from this screen's field and from the
+  /// field list's in-memory state, so it disappears everywhere immediately.
+  ///
+  /// The deletion is persisted on its own, without waiting for "Apply
+  /// changes", so [_savedField] moves with it: the removed image must not
+  /// come back as a pending edit. Errors are rethrown for
+  /// [ImagePickerWidget] to surface inline, and leave the image in place —
+  /// the grid only drops a tile once this completes.
+  Future<void> _deleteNetworkImage(String url) async {
+    final fieldId = currenField.id;
+    if (fieldId == null) {
+      throw StateError('Cannot delete an image of an unsaved field.');
+    }
+    if (isSubmitting) {
+      throw StateError('Cannot delete an image while the field is saving.');
+    }
+
+    await FieldRepository.deleteFieldImage(fieldId: fieldId, imageUrl: url);
+
+    final remaining = currenField.fieldImages
+        .where((image) => image != url)
+        .toList();
+
+    ref.read(fieldNotifierProvider.notifier).setFieldImages(fieldId, remaining);
+
+    if (!mounted) return;
+    setState(() {
+      currenField = currenField.copyWith(fieldImages: remaining);
+      _savedField = _savedField?.copyWith(fieldImages: remaining);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Add new field"),
+        title: Text(isUpdate ? "Update Field" : "Add new field"),
         actions: [
           TextButton.icon(
             onPressed: isChanged && !isSubmitting ? _handleSubmit : null,
@@ -199,9 +289,11 @@ class _AddNewFieldScreenState extends ConsumerState<AddNewFieldScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ImagePickerWidget(
-          maxImages: 6,
+          key: _imagePickerKey,
+          maxImages: 4,
+          onDeleteNetworkImage: _deleteNetworkImage,
           networkImages: currenField.fieldImages,
-          onFilesChanged: (files) => _pickedImageFiles = files,
+          onFilesChanged: (files) => setState(() => _pickedImageFiles = files),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8),

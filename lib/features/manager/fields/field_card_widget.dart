@@ -116,6 +116,16 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
               ),
             ),
             Divider(height: 24),
+            AnimatedSize(
+              duration: AppConstants.animationDuration,
+              child: !expanded
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: _buildEventsPlaceholder(),
+                    ),
+            ),
+            if (expanded) Divider(height: 24),
             Row(
               mainAxisAlignment: .spaceAround,
               children: [
@@ -124,7 +134,11 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
                   icon: Icon(Symbols.image, fill: 1),
                   label: Text("View Images"),
                 ),
-                VerticalDivider(thickness: 1, width: 10, color: Colors.black),
+                Container(
+                  width: 1,
+                  height: 24,
+                  color: Theme.of(context).dividerColor,
+                ),
                 TextButton.icon(
                   onPressed: () {
                     setState(() {
@@ -137,15 +151,6 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
                   label: Text(expanded ? "Hide events" : "Show events"),
                 ),
               ],
-            ),
-            AnimatedSize(
-              duration: AppConstants.animationDuration,
-              child: !expanded
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: _buildEventsPlaceholder(),
-                    ),
             ),
           ],
         ),

@@ -82,4 +82,23 @@ class FieldNotifierProvider extends AsyncNotifier<List<FieldModel>> {
     ]);
     return updated;
   }
+
+  /// Patches [fieldId]'s entry in state with [imageUrls] — purely local, no
+  /// DB round trip. Called by the field form right after it has already
+  /// persisted an image change (uploading new photos, or deleting an
+  /// existing one), passing the field's full resulting image list, so the
+  /// list reflects it immediately instead of waiting for the next
+  /// [refresh].
+  void setFieldImages(int fieldId, List<String> imageUrls) {
+    final fields = state.value;
+    if (fields == null) return;
+
+    state = AsyncData([
+      for (final field in fields)
+        if (field.id == fieldId)
+          field.copyWith(fieldImages: imageUrls)
+        else
+          field,
+    ]);
+  }
 }
