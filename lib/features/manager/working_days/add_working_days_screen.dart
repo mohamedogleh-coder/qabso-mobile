@@ -8,12 +8,6 @@ import '../../../utill/app_dailogs.dart';
 import '../../../utill/app_date_util.dart';
 import '../../../utill/app_utility_service.dart';
 
-/// Configures the stadium's whole week — all seven days are edited together
-/// and saved in one call, so the days a stadium is closed are recorded just
-/// as deliberately as the days it's open.
-///
-/// Doubles as create and edit: days already saved are loaded from the
-/// notifier, and any day not on file yet starts on the defaults below.
 class AddWorkingDaysScreen extends ConsumerStatefulWidget {
   const AddWorkingDaysScreen({super.key});
 
@@ -53,10 +47,6 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
   bool get _isValid =>
       _hasOpenDay && _days.every((day) => _errorFor(day) == null);
 
-  /// Mirrors the table's `close_time > open_time` check for a day that's
-  /// open. Zero-padded `HH:mm` compares correctly as text, so no parsing is
-  /// needed. A closed day keeps its hours untouched and isn't validated —
-  /// they're only there so reopening the day restores what it had.
   String? _errorFor(WorkingDayModel day) {
     if (!day.isOpen) return null;
     if (day.closeTime.compareTo(day.openTime) <= 0) {
@@ -82,16 +72,14 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
 
     final picked = await AppUtilityService.pickTime(
       context: context,
-      initialTime: _toTimeOfDay(current),
+      initialTime: AppDateUtil.parseTimeOfDay(current),
       helpText: isOpenTime
           ? "${day.dayName} — open time"
           : "${day.dayName} — close time",
     );
     if (picked == null) return;
 
-    final value = AppDateUtil.formatTime(
-      DateTime(2000, 1, 1, picked.hour, picked.minute),
-    );
+    final value = AppDateUtil.formatTimeOfDay(picked);
 
     _replaceDay(
       isOpenTime
@@ -100,9 +88,6 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
     );
   }
 
-  /// Copies the first open day's hours onto every other open day — the
-  /// common case is a week of identical hours, and setting fourteen times by
-  /// hand to achieve that is the tedious path.
   void _applyFirstDayToAll() {
     final source = _days.firstWhere((day) => day.isOpen);
 
@@ -124,9 +109,6 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
     );
   }
 
-  /// Saves all seven days through the notifier's single write. Guards
-  /// against double taps and unsafe `context` use across the awaited call,
-  /// and only leaves the screen once the save has actually landed.
   Future<void> _handleSubmit() async {
     if (isSubmitting) return;
 
@@ -164,17 +146,6 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
       setState(() => isSubmitting = false);
       showErrorSnackBar(context: context, message: e.toString());
     }
-  }
-
-  static TimeOfDay? _toTimeOfDay(String value) {
-    final parts = value.split(':');
-    if (parts.length < 2) return null;
-
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-    if (hour == null || minute == null) return null;
-
-    return TimeOfDay(hour: hour, minute: minute);
   }
 
   @override
@@ -276,6 +247,7 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
                       day.isOpen ? "Open" : "Closed",
                       style: theme.textTheme.bodySmall,
                     ),
+                    const SizedBox(width: 12),
                     Switch.adaptive(
                       value: day.isOpen,
                       onChanged: isSubmitting

@@ -1,13 +1,12 @@
 class WorkingDayModel {
-  /// Indexed by `dayOfWeek - 1`, matching the table's 1..7 (Monday first).
-  static const List<String> dayNames = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
+   static const List<String> dayNames = [
+    'Isniin',
+    'Salasa',
+    'Arbaca',
+    'Khamiis',
+    'Jimce',
+    'Sabti',
+    'Axad',
   ];
 
   final int? id;
