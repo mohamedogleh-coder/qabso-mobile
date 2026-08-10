@@ -5,6 +5,7 @@ import 'package:qabso_mobile/features/manager/fields/fields_screen.dart';
 import 'package:qabso_mobile/features/manager/home/manager_home_screen.dart';
 import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
 import 'package:qabso_mobile/features/manager/stadium/stadium_settings_screen.dart';
+import 'package:qabso_mobile/features/manager/working_days/working_days_screen.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../utill/app_bottom_navigation.dart';
@@ -70,8 +71,8 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
 
         final managerScreens = [
           ManagerHomeScreen(stadium: stadium),
-      const    FieldsScreen(),
-          const Center(child: Text("data")),
+          const FieldsScreen(),
+          const WorkingDaysScreen(),
           StadiumSettingsScreen(stadiumModel: stadium),
         ];
 
