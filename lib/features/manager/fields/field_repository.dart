@@ -16,7 +16,7 @@ class FieldRepository {
         .from(_fieldsWithImagesView)
         .select()
         .eq('stadium_id', stadiumId)
-        .order('created_at');
+        .order('id',ascending: true);
 
     return rows.map(FieldModel.fromJson).toList();
   }
