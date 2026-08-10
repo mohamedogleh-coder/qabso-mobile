@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -48,5 +49,24 @@ abstract class SupabaseStorageService {
           ? DateTime.now().millisecondsSinceEpoch.toString()
           : null,
     );
+  }
+
+  /// Generates a random, collision-resistant filename that preserves
+  /// [sourcePath]'s extension (e.g. `'.../photo.PNG'` ->
+  /// `'1723150000000_a1b2c3d4.png'`), for callers that need a fresh unique
+  /// name per upload rather than a caller-chosen stable path.
+  static String randomFileName(String sourcePath) {
+    final dotIndex = sourcePath.lastIndexOf('.');
+    final extension = dotIndex == -1 || dotIndex == sourcePath.length - 1
+        ? ''
+        : sourcePath.substring(dotIndex).toLowerCase();
+
+    final random = Random();
+    final suffix = List.generate(
+      8,
+      (_) => random.nextInt(16).toRadixString(16),
+    ).join();
+
+    return '${DateTime.now().microsecondsSinceEpoch}_$suffix$extension';
   }
 }

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../utill/supabase_storage_service.dart';
 import 'field_model.dart';
 
 class FieldRepository {
@@ -49,14 +52,6 @@ class FieldRepository {
     return model.copyWith(id: fieldId);
   }
 
-  /// Updates the editable fields of [model] (which must already have a
-  /// [FieldModel.id]), scoped to [stadiumId] so a field can't be updated
-  /// outside the stadium it belongs to. Images aren't touched here, so the
-  /// known [FieldModel.fieldImages] is carried over onto the result as-is.
-  ///
-  /// Unlike [createField], this goes through a plain table update rather
-  /// than a DB function, so `.select()` can return the saved row in the
-  /// same request — no separate re-fetch needed either way.
   static Future<FieldModel> updateField({
     required String stadiumId,
     required FieldModel model,
@@ -79,5 +74,27 @@ class FieldRepository {
         .single();
 
     return FieldModel.fromJson(row).copyWith(fieldImages: model.fieldImages);
+  }
+
+  /// Uploads [files] to the `playground` bucket under
+  /// `stadiums/{stadiumId}/fields/{fieldId}/<random-file-name>`, one path
+  /// per file with a fresh random name (extension preserved) so uploads
+  /// never collide with each other or with a previous attempt.
+  ///
+  /// Storage only — this does not write `field_images` rows, which aren't
+  /// implemented yet. Returns the public URL of each uploaded file, in the
+  /// same order as [files].
+  static Future<List<String>> uploadFieldImages({
+    required String stadiumId,
+    required int fieldId,
+    required List<File> files,
+  }) async {
+    final urls = <String>[];
+    for (final file in files) {
+      final fileName = SupabaseStorageService.randomFileName(file.path);
+      final path = 'stadiums/$stadiumId/fields/$fieldId/$fileName';
+      urls.add(await SupabaseStorageService.uploadFile(path: path, file: file));
+    }
+    return urls;
   }
 }
