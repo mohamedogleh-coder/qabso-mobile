@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:qabso_mobile/features/manager/events/time_slots_list_widget.dart';
 import 'package:qabso_mobile/features/manager/fields/field_model.dart';
 
 import '../../../utill/app_constants.dart';
@@ -122,35 +123,30 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
                   ? const SizedBox.shrink()
                   : Padding(
                       padding: const EdgeInsets.only(top: 12),
-                      child: _buildEventsPlaceholder(),
+                      child: TimeSlotsListWidget(fieldId: widget.model.id??0),
                     ),
             ),
             if (expanded) Divider(height: 24),
-            Row(
-              mainAxisAlignment: .spaceAround,
-              children: [
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: Icon(Symbols.image, fill: 1),
-                  label: Text("View Images"),
+            InkWell(
+              onTap: () {
+                setState(() {
+                  expanded = !expanded;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: .center,
+                  children: [
+                    Icon(
+                      expanded
+                          ? Symbols.arrow_drop_up
+                          : Symbols.arrow_drop_down,
+                    ),
+                    Text(expanded ? "Hide events" : "Show events"),
+                  ],
                 ),
-                Container(
-                  width: 1,
-                  height: 24,
-                  color: Theme.of(context).dividerColor,
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      expanded = !expanded;
-                    });
-                  },
-                  icon: Icon(
-                    expanded ? Symbols.arrow_drop_up : Symbols.arrow_drop_down,
-                  ),
-                  label: Text(expanded ? "Hide events" : "Show events"),
-                ),
-              ],
+              ),
             ),
           ],
         ),
@@ -158,20 +154,4 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
     );
   }
 
-  Widget _buildEventsPlaceholder() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).highlightColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Text(
-          "Events coming soon",
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ),
-    );
-  }
 }

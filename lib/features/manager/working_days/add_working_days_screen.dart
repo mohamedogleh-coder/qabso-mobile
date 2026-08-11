@@ -227,6 +227,7 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
     final error = _errorFor(day);
 
     return Card(
+      elevation: day.isOpen ? 1 : 0,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
         child: Column(
