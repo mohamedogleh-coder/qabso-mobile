@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
+import 'package:qabso_mobile/features/manager/events/widgets/selected_time_widget.dart';
 import 'package:qabso_mobile/payments/payment_allocation_model.dart';
 
 import '../features/manager/merchants/merchant_repository.dart';
 import '../features/manager/merchants/stadium_merchant_model.dart';
-import '../utill/app_date_util.dart';
 import '../utill/error_widget.dart';
 import '../utill/loading_widget.dart';
 
@@ -87,7 +87,7 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildEventCard(),
+          SelectedTimeWidget(selectedModel: widget.timeSlotModel),
           const SizedBox(height: 16),
           FutureBuilder<List<StadiumMerchantModel>>(
             future: _merchantsFuture,
@@ -120,69 +120,6 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
   }
 
   /// What the customer is paying for, and what it costs.
-  Widget _buildEventCard() {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: .25),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Symbols.schedule,
-              size: 25,
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Selected Time", style: theme.textTheme.bodySmall),
-                const SizedBox(height: 4),
-                Text(
-                  widget.timeSlotModel.label,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  AppDateUtil.formatReadableDate(
-                    widget.timeSlotModel.startTime,
-                  ),
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            "\$${widget.requiredAmount.toStringAsFixed(2)}",
-            style: theme.textTheme.headlineMedium?.copyWith(
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-    );
-  }
 
   Widget _buildMerchantPicker(List<StadiumMerchantModel> merchants) {
     final theme = Theme.of(context);
@@ -227,7 +164,7 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? theme.colorScheme.primary
+                    ? theme.colorScheme.tertiary
                     : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(10),
               ),

@@ -123,7 +123,11 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
                   ? const SizedBox.shrink()
                   : Padding(
                       padding: const EdgeInsets.only(top: 12),
-                      child: TimeSlotsListWidget(fieldId: widget.model.id??0),
+                      child: TimeSlotsListWidget(
+                        fieldId: widget.model.id ?? 0,
+                        fieldCost: widget.model.cost,
+                        capacity: widget.model.capacity,
+                      ),
                     ),
             ),
             if (expanded) Divider(height: 24),
@@ -153,5 +157,4 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
       ),
     );
   }
-
 }

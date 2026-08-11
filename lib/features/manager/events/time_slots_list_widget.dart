@@ -18,8 +18,15 @@ final selectedDateProvider = StateProvider.autoDispose<DateTime>((ref) {
 
 class TimeSlotsListWidget extends ConsumerStatefulWidget {
   final int fieldId;
+  final double fieldCost;
+  final int capacity;
 
-  const TimeSlotsListWidget({super.key, required this.fieldId});
+  const TimeSlotsListWidget({
+    super.key,
+    required this.fieldId,
+    required this.fieldCost,
+    required this.capacity,
+  });
 
   @override
   ConsumerState<TimeSlotsListWidget> createState() =>
@@ -27,6 +34,14 @@ class TimeSlotsListWidget extends ConsumerStatefulWidget {
 }
 
 class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
+  late double requiredAmount;
+
+  @override
+  void initState() {
+    super.initState();
+    requiredAmount = (widget.capacity * widget.fieldCost);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -67,7 +82,12 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
               spacing: 2,
               runSpacing: 4,
               children: slots
-                  .map((slot) => TimeSlotCardWidget(slotModel: slot))
+                  .map(
+                    (slot) => TimeSlotCardWidget(
+                      slotModel: slot,
+                      requiredAmount: requiredAmount,
+                    ),
+                  )
                   .toList(),
             );
           },

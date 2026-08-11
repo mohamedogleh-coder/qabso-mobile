@@ -4,16 +4,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
+import 'package:qabso_mobile/features/manager/events/widgets/event_booking_options_widget.dart';
 import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
-import 'package:qabso_mobile/payments/user_payment_widget.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
 
 final selectedTimeSlotProvider = StateProvider<TimeSlotModel?>((ref) => null);
 
 class TimeSlotCardWidget extends ConsumerStatefulWidget {
   final TimeSlotModel slotModel;
+  final double requiredAmount;
 
-  const TimeSlotCardWidget({super.key, required this.slotModel});
+  const TimeSlotCardWidget({
+    super.key,
+    required this.slotModel,
+    required this.requiredAmount,
+  });
 
   @override
   ConsumerState<TimeSlotCardWidget> createState() => _TimeSlotCardWidgetState();
@@ -97,15 +102,19 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
               context: context,
               builder: (context) {
                 final stadium = ref.read(stadiumNotifierProvider).value;
-                return UserPaymentWidget(
-                  stadiumId: stadium!.stadiumId!,
-                  requiredAmount: 10,
-                  timeSlotModel: widget.slotModel,
-                  onSubmit: (value) {
-                    print("Clicked");
-                    print("Values $value");
-                  },
+                return EventBookingOptionsWidget(
+                  selectedTime: widget.slotModel,
+                  requiredAmount: widget.requiredAmount,
                 );
+                // return UserPaymentWidget(
+                //   stadiumId: stadium!.stadiumId!,
+                //   requiredAmount: 10,
+                //   timeSlotModel: widget.slotModel,
+                //   onSubmit: (value) {
+                //     print("Clicked");
+                //     print("Values $value");
+                //   },
+                // );
               },
             );
           },
