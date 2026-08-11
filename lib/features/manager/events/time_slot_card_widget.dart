@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
+import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
+import 'package:qabso_mobile/payments/user_payment_widget.dart';
+import 'package:qabso_mobile/utill/app_dailogs.dart';
 
 final selectedTimeSlotProvider = StateProvider<TimeSlotModel?>((ref) => null);
 
@@ -22,6 +25,32 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
   @override
   void initState() {
     super.initState();
+  }
+
+  Future<void> _openPaymentSheet() async {
+    final stadium = ref.read(stadiumNotifierProvider).value;
+    // final payment = await showPaymentSheet(
+    //   context: context,
+    //   requiredAmount: 10,
+    //   title: widget.slotModel.label,
+    // );
+    //
+    // if (payment == null || !mounted) return;
+    //
+    // final split = payment.allocations
+    //     .map(
+    //       (a) =>
+    //           "${a.methodName} \$${a.amountPaid.toStringAsFixed(2)}"
+    //           "${a.isCash ? '' : ' (${a.merchantNumber})'}",
+    //     )
+    //     .join(", ");
+    //
+    // showSuccessSnackBar(
+    //   context: context,
+    //   message:
+    //       "Required \$${payment.requiredAmount.toStringAsFixed(2)}, "
+    //       "discount \$${payment.discount.toStringAsFixed(2)} → $split",
+    // );
   }
 
   @override
@@ -63,7 +92,23 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
       child: Card(
         elevation: 0,
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            showAppBottomSheet(
+              context: context,
+              builder: (context) {
+                final stadium = ref.read(stadiumNotifierProvider).value;
+                return UserPaymentWidget(
+                  stadiumId: stadium!.stadiumId!,
+                  requiredAmount: 10,
+                  timeSlotModel: widget.slotModel,
+                  onSubmit: (value) {
+                    print("Clicked");
+                    print("Values $value");
+                  },
+                );
+              },
+            );
+          },
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(

@@ -440,27 +440,29 @@ Future<T?> showAppBottomSheet<T>({
     ),
     builder: (sheetContext) {
       final viewInsets = MediaQuery.of(sheetContext).viewInsets;
-      return Padding(
-        padding: EdgeInsets.only(bottom: viewInsets.bottom),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (title != null)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  showDragHandle ? 4 : 20,
-                  20,
-                  12,
+      return SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (title != null)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    showDragHandle ? 4 : 20,
+                    20,
+                    12,
+                  ),
+                  child: Text(
+                    title,
+                    style: Theme.of(sheetContext).textTheme.headlineMedium,
+                  ),
                 ),
-                child: Text(
-                  title,
-                  style: Theme.of(sheetContext).textTheme.headlineMedium,
-                ),
-              ),
-            Flexible(child: builder(sheetContext)),
-          ],
+              Flexible(child: builder(sheetContext)),
+            ],
+          ),
         ),
       );
     },
