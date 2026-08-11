@@ -192,7 +192,7 @@ class _ConfirmationDialogState extends State<_ConfirmationDialog> {
                 widget.message!,
                 textAlign: widget.icon == null
                     ? TextAlign.start
-                    : TextAlign.center,
+                    : TextAlign.start,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colors.onSurfaceVariant,
                 ),
