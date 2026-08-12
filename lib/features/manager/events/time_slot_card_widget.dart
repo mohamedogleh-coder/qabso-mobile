@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/events/event_booking_service.dart';
 import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
+import 'package:qabso_mobile/features/manager/events/models/half_booked_event_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/book_another_half_widget.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/event_booking_options_widget.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 final selectedTimeSlotProvider = StateProvider<TimeSlotModel?>((ref) => null);
 
@@ -41,76 +43,124 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
     }
   }
 
-  Future<void> _handleTap() async {
+  TimeSlotModel get _slot => widget.slotModel;
+
+  /// Reads which state the slot is in and hands over to the handler for it.
+  /// All the work is in those three methods.
+  Future<void> onTapHandler() async {
     if (isBooking) return;
 
-    if (!widget.slotModel.isAvailable) {
-      if (widget.slotModel.eventStatus == EventStatus.pending) {
-        await _openRemainingHalf();
-      } else {
-        await _showBookedSlotAction();
-      }
-      return;
-    }
+    switch (_slot.eventStatus) {
+      case EventStatus.available:
+        await _handleAvailableEvent();
+        return;
 
+      case EventStatus.pending:
+        await _handlePendingEvent();
+        return;
+
+      // A cancelled event is never shown in the grid, so it is handled like a
+      // confirmed one.
+      case EventStatus.confirmed:
+      case EventStatus.canceled:
+        await _handleConfirmedEvent();
+        return;
+    }
+  }
+
+  /// Nobody booked this slot yet.
+  ///
+  /// When the stadium allows half booking the team chooses how much to take.
+  /// When it does not there is nothing to choose, so we take the payment for
+  /// the whole slot straight away.
+  Future<void> _handleAvailableEvent() async {
     if (widget.booking.allowHalfBooking) {
       await _openBookingOptions();
       return;
     }
 
     await _bookWholeSlot();
+    return;
   }
 
-  /// A booking that still owes half. A locked one asks for its code first, so
-  /// it opens [BookAnotherHalfWidget]; an open one is offered to anyone, so it
-  /// goes straight to the payment sheet that fits the signed-in role.
+  /// One team paid its half and the other half is still owed.
   ///
-  /// Taking the half is not written yet: what is collected here is not settled
-  /// against the booking, which is `book_another_half_fn`'s job to come.
-  Future<void> _openRemainingHalf() async {
-    final eventId = widget.slotModel.eventId;
+  /// A private event needs its code first, so it opens the code widget. A
+  /// public event is open to anyone, so we go straight to the payment.
+  Future<void> _handlePendingEvent() async {
+    final eventId = _slot.eventId;
 
     if (eventId == null) {
-      await _showBookedSlotAction();
+      await _handleConfirmedEvent();
       return;
     }
 
-    if (widget.slotModel.isPrivate) {
+    if (_slot.isPrivate) {
       await showAppBottomSheet<bool>(
         context: context,
-        builder: (sheetContext) => BookAnotherHalfWidget(eventId: eventId),
+        builder: (sheetContext) =>
+            BookAnotherHalfWidget(booking: widget.booking, eventId: eventId),
       );
       return;
     }
 
-    await EventBookingService.collectPayment(
-      context: context,
-      ref: ref,
-      booking: widget.booking,
-      slot: widget.slotModel,
-      // What the first team left owing is the other half of the slot.
-      amount: EventBookingService.amountDue(
-        slotPrice: widget.booking.slotPrice,
-        isHalfBooking: true,
-      ),
-    );
+    await _payRemainingHalf(eventId);
+    return;
   }
 
-  /// What can be done with a booking already paid in full — cancelling it,
-  /// moving it — is not built yet.
-  Future<void> _showBookedSlotAction() {
+  /// The slot is paid in full. Cancelling or moving it is not built yet, so
+  /// that flow goes here later.
+  Future<void> _handleConfirmedEvent() {
     return showNotImplementedDialog(
       context: context,
       message: "Maamulka booking-ga la xaqiijiyay weli lama dhisin.",
     );
   }
 
+  /// Takes the half a public event still owes.
+  ///
+  /// The event is loaded first because it is the only place that knows how
+  /// much is left to pay. That amount is what the payment sheet asks for.
+  Future<void> _payRemainingHalf(int eventId) async {
+    HalfBookedEventModel event;
+
+    _setBusy(true);
+    try {
+      event = await ref.read(halfBookedEventProvider(eventId).future);
+    } catch (e) {
+      if (!mounted) return;
+
+      await showAppErrorDialog(
+        context: context,
+        title: "Booking-ku ma dhicin",
+        message: e is PostgrestException
+            ? e.message
+            : "Event-kan hadda lama qaadi karo.",
+      );
+      return;
+    } finally {
+      _setBusy(false);
+    }
+
+    if (!mounted) return;
+
+    await EventBookingService.settleRemainingHalf(
+      context: context,
+      ref: ref,
+      booking: widget.booking,
+      event: event,
+      onBusy: _setBusy,
+    );
+    return;
+  }
+
+  /// Opens the sheet where the team picks a half booking or the whole slot.
   Future<void> _openBookingOptions() {
     return showAppBottomSheet<int>(
       context: context,
       builder: (sheetContext) => EventBookingOptionsWidget(
         booking: widget.booking,
-        selectedTime: widget.slotModel,
+        selectedTime: _slot,
       ),
     );
   }
@@ -171,7 +221,9 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
 
     return badges.Badge(
       position: badges.BadgePosition.topStart(top: -4, start: -2),
-      showBadge: widget.slotModel.isPrivate,
+      showBadge:
+          (widget.slotModel.isPrivate &&
+          widget.slotModel.eventStatus == EventStatus.pending),
       badgeStyle: badges.BadgeStyle(
         shape: badges.BadgeShape.square,
         badgeColor: theme.colorScheme.tertiary,
@@ -186,7 +238,7 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
       child: Card(
         elevation: 0,
         child: InkWell(
-          onTap: isBooking ? null : _handleTap,
+          onTap: isBooking ? null : onTapHandler,
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(

@@ -43,6 +43,25 @@ NEW.event_status = 'cancelled' THEN
         RETURN NEW;
 END IF;
 
+    -- Money moving on a booking that already exists is not a new booking. The
+    -- day, the field and the hour are the ones that were validated when it was
+    -- made, and none of them is changing here — so a stadium that has since
+    -- closed that weekday, a field that has since stopped taking bookings, or a
+    -- half-booking policy that has since been switched off must not stand in
+    -- the way of the other half being paid.
+    --
+    -- Everything below is therefore skipped whenever the slot itself has not
+    -- moved. What is left — event_status and remaining — is the caller's to
+    -- keep consistent, which chk_event_status_remaining enforces anyway.
+    IF
+TG_OP = 'UPDATE'
+       AND NEW.field_id IS NOT DISTINCT FROM OLD.field_id
+       AND NEW.event_start IS NOT DISTINCT FROM OLD.event_start
+       AND NEW.event_end IS NOT DISTINCT FROM OLD.event_end
+       AND NEW.extra_time IS NOT DISTINCT FROM OLD.extra_time THEN
+        RETURN NEW;
+END IF;
+
     -- NOT NULL is only enforced after BEFORE triggers run, so guard here.
     -- Otherwise a NULL folds every check below to NULL and the row is
     -- rejected with the wrong reason.

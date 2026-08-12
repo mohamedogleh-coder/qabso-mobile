@@ -55,6 +55,83 @@ class EventRepository {
     return HalfBookedEventModel.fromJson(row);
   }
 
+  /// Takes the half a booking still owes and records the payment for it,
+  /// returning the booking's id.
+  ///
+  /// No amount is passed: the whole remaining half is what gets taken, and
+  /// `book_another_half_fn` reads that from the booking itself, so nothing
+  /// here can disagree with what is actually owed.
+  ///
+  /// Whether the half is still there to take, whether the code matches, and
+  /// whether the split covers what is owed are all decided by that function
+  /// while it holds the row locked — two people paying the same half at once
+  /// cannot both succeed. The checks here are only the ones that would
+  /// otherwise cost a round trip to hear.
+  ///
+  /// [eventKey] belongs to a private booking. A public half is open to anyone
+  /// and takes null.
+  static Future<int> bookAnotherHalf({
+    required int eventId,
+    required List<PaymentAllocationModel> payments,
+    double discount = 0,
+    String? eventKey,
+    String? paidUser,
+    String? processedBy,
+  }) async {
+    // Mirrors the function's own check, which mirrors chk_transaction_actors.
+    if ((paidUser == null) == (processedBy == null)) {
+      throw ArgumentError(
+        'Exactly one of paidUser or processedBy is required.',
+      );
+    }
+
+    if (payments.isEmpty) {
+      throw ArgumentError.value(
+        payments,
+        'payments',
+        'At least one payment is required.',
+      );
+    }
+
+    if (payments.any((payment) => payment.amountPaid <= 0)) {
+      throw ArgumentError.value(
+        payments,
+        'payments',
+        'Every payment must be greater than zero.',
+      );
+    }
+
+    if (discount < 0) {
+      throw ArgumentError.value(
+        discount,
+        'discount',
+        'A discount cannot be negative.',
+      );
+    }
+
+    if (eventKey != null && eventKey.length != 4) {
+      throw ArgumentError.value(
+        eventKey,
+        'eventKey',
+        'A lock code is exactly 4 characters.',
+      );
+    }
+
+    final settledId = await _client.rpc(
+      'book_another_half_fn',
+      params: {
+        'p_event_id': eventId,
+        'p_event_key': eventKey,
+        'p_discounted': discount,
+        'p_paid_user': paidUser,
+        'p_processed_by': processedBy,
+        'p_merchants': payments.map((payment) => payment.toJson()).toList(),
+      },
+    );
+
+    return settledId as int;
+  }
+
   /// Books one slot and records the payment taken for it, returning the new
   /// booking's id.
   ///

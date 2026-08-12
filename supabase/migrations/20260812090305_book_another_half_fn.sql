@@ -1,47 +1,62 @@
--- Settles the half a booking was left owing.
+-- Settles the half a booking was left owing, and records the payment for it.
 --
 -- The other side of book_event_fn: that one creates a slot as 'pending' with
 -- the second team's share sitting in event_bookings.remaining, and this one
--- takes that share off. No new booking is created — the slot, the field and
--- the hour are the ones already on file, so none of the booking rules are
--- asked again here. trg_check_before_booking_event still runs on the UPDATE
--- (remaining and event_status are both in its column list) and re-derives the
--- status from remaining, which is why the status written below can only ever
--- agree with it.
+-- takes that share off and confirms the booking.
 --
--- Money is not recorded here: the payment flow writes the transaction and its
--- details. [p_amount_paid] is what the booking is credited with — the figure
--- before any discount, the same amount book_event_fn credits the first half
--- with.
+-- No booking rule is asked again. The event already exists, so its field, its
+-- day and its hour were settled when it was made — whether the stadium still
+-- works that weekday, whether the field still takes bookings, whether half
+-- bookings are still allowed are all questions about making a booking, not
+-- about paying for one that exists. trg_check_before_booking_event skips
+-- itself for exactly this reason when the slot has not moved.
 --
--- Returns the booking as it now stands, so the caller can show whether it is
--- settled or still owes something without re-reading it.
+-- The field is not a parameter either: the event carries it, and the stadium
+-- the ledger entry belongs to is read through it.
+--
+-- The whole remaining half is taken at once — that is what "book another half"
+-- is — so the booking always ends confirmed, owing nothing, with its private
+-- code released.
 CREATE OR REPLACE FUNCTION public.book_another_half_fn(
     p_event_id INT,
-    p_field_id SMALLINT,
-    p_amount_paid NUMERIC(12, 2),
-    p_event_key VARCHAR(4) DEFAULT NULL
+    p_event_key VARCHAR(4),
+    p_discounted NUMERIC(12, 2),
+    p_paid_user UUID,
+    p_processed_by UUID,
+    p_merchants JSONB
 )
-    RETURNS JSONB
+    RETURNS INT
     LANGUAGE plpgsql
     SECURITY INVOKER
     SET search_path = public, pg_temp
 AS
 $$
 DECLARE
-    v_field_id      SMALLINT;
-    v_event_status  public.event_status;
-    v_event_key     VARCHAR(4);
-    v_remaining     NUMERIC(12, 2);
+    v_stadium_id      UUID;
+    v_event_status    public.event_status;
+    v_event_key       VARCHAR(4);
+    v_remaining       NUMERIC(12, 2);
 
-    v_amount_paid   NUMERIC(12, 2);
-    v_new_remaining NUMERIC(12, 2);
-    v_new_status    public.event_status;
-    v_new_key       VARCHAR(4);
+    v_discounted      NUMERIC(12, 2);
+    v_required_amount NUMERIC(12, 2);
+
+    v_merchants_total NUMERIC(12, 2);
+    v_smallest_paid   NUMERIC(12, 2);
+
+    v_transaction_id  INT;
 BEGIN
 
     ------------------------------------------------------------
-    -- Validate parameters
+    -- Validate payer
+    ------------------------------------------------------------
+
+    IF (p_paid_user IS NULL) = (p_processed_by IS NULL) THEN
+        RAISE EXCEPTION 'Fadlan p_processed_by ama p_paid_user ayaa loo bahan yahay'
+            USING ERRCODE = 'P1001';
+    END IF;
+
+    ------------------------------------------------------------
+    -- Validate event
     ------------------------------------------------------------
 
     IF p_event_id IS NULL THEN
@@ -49,15 +64,14 @@ BEGIN
             USING ERRCODE = 'P1001';
     END IF;
 
-    IF p_field_id IS NULL THEN
-        RAISE EXCEPTION 'Fadlan field-ka waa qasab'
-            USING ERRCODE = 'P1001';
-    END IF;
+    ------------------------------------------------------------
+    -- Validate merchants
+    ------------------------------------------------------------
 
-    v_amount_paid := ROUND(COALESCE(p_amount_paid, 0), 2);
-
-    IF v_amount_paid <= 0 THEN
-        RAISE EXCEPTION 'Fadlan lacagta la bixinayo waa inay ka weyn tahay 0'
+    IF p_merchants IS NULL
+        OR jsonb_typeof(p_merchants) <> 'array'
+        OR jsonb_array_length(p_merchants) = 0 THEN
+        RAISE EXCEPTION 'Fadlan ugu yaraan hal lacag-bixin waa qasab'
             USING ERRCODE = 'P1001';
     END IF;
 
@@ -67,55 +81,30 @@ BEGIN
     -- FOR UPDATE is what makes two people paying the same remaining half at
     -- the same moment safe. The second call waits here until the first
     -- commits, and Postgres then re-reads the row it was waiting on, so it
-    -- carries on against the remaining the first one left behind rather than
-    -- the figure it started with. Both cannot take the same half.
+    -- sees the half already taken instead of the figure it started with.
+    -- OF e keeps the lock on the booking; the field is only read.
     ------------------------------------------------------------
 
-    SELECT field_id, event_status, event_key, remaining
-    INTO v_field_id, v_event_status, v_event_key, v_remaining
-    FROM event_bookings
-    WHERE id = p_event_id
-        FOR UPDATE;
+    SELECT f.stadium_id, e.event_status, e.event_key, e.remaining
+    INTO v_stadium_id, v_event_status, v_event_key, v_remaining
+    FROM event_bookings e
+             JOIN fields f ON f.id = e.field_id
+    WHERE e.id = p_event_id
+        FOR UPDATE OF e;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Fadlan event-ka % lama helin', p_event_id
             USING ERRCODE = 'P1001';
     END IF;
 
-    -- The half being paid must belong to the booking the caller is looking at.
-    IF v_field_id <> p_field_id THEN
-        RAISE EXCEPTION 'Event-kani kuma jiro field-ka aad dooratay'
-            USING ERRCODE = 'P1001';
-    END IF;
-
-    ------------------------------------------------------------
-    -- Is there a half left to take?
-    ------------------------------------------------------------
-
-    IF v_event_status = 'cancelled' THEN
-        RAISE EXCEPTION 'Event-kan waa la joojiyay'
-            USING ERRCODE = 'P1001';
-    END IF;
-
-    -- chk_event_status_remaining ties 'pending' to remaining > 0, so a booking
-    -- that is not pending is one that owes nothing.
     IF v_event_status <> 'pending' OR v_remaining <= 0 THEN
         RAISE EXCEPTION 'Event-kan lacagtiisa oo dhan hore ayaa loo bixiyay'
             USING ERRCODE = 'P1001';
     END IF;
 
-    ------------------------------------------------------------
-    -- The private code
-    --
-    -- Only a locked half asks for one: the code is what the first team was
-    -- handed to give to whoever pays the rest. A booking left open has no
-    -- code, and asking for one would lock a slot that was meant for anyone.
-    ------------------------------------------------------------
-
     IF v_event_key IS NOT NULL THEN
         IF p_event_key IS NULL THEN
-            RAISE EXCEPTION
-                'Event-kani waa xidhan yahay, fadlan code-ka gali'
+            RAISE EXCEPTION 'Event-kani waa xidhan yahay, fadlan code-ka gali'
                 USING ERRCODE = 'P1001';
         END IF;
 
@@ -126,47 +115,96 @@ BEGIN
     END IF;
 
     ------------------------------------------------------------
-    -- The money
+    -- Calculate amount
     ------------------------------------------------------------
 
-    IF v_amount_paid > v_remaining THEN
-        RAISE EXCEPTION
-            'Lacagta la bixinayo (%) way ka badan tahay inta hadhay (%)',
-            v_amount_paid, v_remaining
+    v_discounted := ROUND(COALESCE(p_discounted, 0), 2);
+
+    IF v_discounted < 0 THEN
+        RAISE EXCEPTION 'Fadlan qiimo-dhimistu ma noqon karto negative'
             USING ERRCODE = 'P1001';
     END IF;
 
-    v_new_remaining := v_remaining - v_amount_paid;
+    -- The discount comes off what this payer hands over and cannot swallow it
+    -- whole: some money must actually change hands.
+    IF v_discounted >= v_remaining THEN
+        RAISE EXCEPTION
+            'Fadlan qiimo-dhimistu waa inay ka yartahay lacagta la rabo oo ah (%)',
+            v_remaining
+            USING ERRCODE = 'P1001';
+    END IF;
 
-    -- Settled in full: the booking becomes confirmed and gives up its code,
-    -- which also releases it from uq_event_bookings_open_event_key — that
-    -- index only covers pending rows, so a code left behind on a confirmed
-    -- booking would keep a value reserved that nothing can use.
-    IF v_new_remaining = 0 THEN
-        v_new_status := 'confirmed';
-        v_new_key := NULL;
-    ELSE
-        v_new_status := 'pending';
-        v_new_key := v_event_key;
+    v_required_amount := v_remaining - v_discounted;
+
+    ------------------------------------------------------------
+    -- Calculate merchant payments
+    ------------------------------------------------------------
+
+    SELECT COALESCE(SUM(ROUND((m ->> 'amount_paid')::NUMERIC, 2)), 0),
+           MIN(COALESCE(ROUND((m ->> 'amount_paid')::NUMERIC, 2), 0))
+    INTO v_merchants_total, v_smallest_paid
+    FROM jsonb_array_elements(p_merchants) m;
+
+    IF v_smallest_paid <= 0 THEN
+        RAISE EXCEPTION 'Fadlan lacagaha ku jira merchantsku waa inay ka weyn yihiin 0'
+            USING ERRCODE = 'P1001';
+    END IF;
+
+    IF v_merchants_total <> v_required_amount THEN
+        RAISE EXCEPTION 'Lacagta la rabo %, laakiin waxaa la helay %',
+            v_required_amount, v_merchants_total
+            USING ERRCODE = 'P1001';
     END IF;
 
     ------------------------------------------------------------
-    -- Settle it
+    -- Settle the event
+    --
+    -- Nothing is owed any more, so it is confirmed and gives up its code —
+    -- which also releases it from uq_event_bookings_open_event_key, an index
+    -- that only covers pending rows.
     ------------------------------------------------------------
 
     UPDATE event_bookings
-    SET remaining    = v_new_remaining,
-        event_status = v_new_status,
-        event_key    = v_new_key
+    SET remaining    = 0,
+        event_status = 'confirmed',
+        event_key    = NULL
     WHERE id = p_event_id;
 
-    RETURN jsonb_build_object(
-            'eventId', p_event_id,
-            'eventStatus', v_new_status::text,
-            'remaining', v_new_remaining,
-            'eventKey', v_new_key,
-            'amountPaid', v_amount_paid
-           );
+    ------------------------------------------------------------
+    -- Create transaction
+    --
+    -- total_amount is what this payer owed before the discount; the details
+    -- below must add up to total_amount - discounted, which is the sum already
+    -- checked above.
+    ------------------------------------------------------------
+
+    INSERT INTO transactions (transaction_type,
+                              stadium_id,
+                              total_amount,
+                              discounted,
+                              event_id,
+                              paid_user,
+                              processed_by)
+    VALUES ('payment',
+            v_stadium_id,
+            v_remaining,
+            v_discounted,
+            p_event_id,
+            p_paid_user,
+            p_processed_by)
+    RETURNING id INTO v_transaction_id;
+
+    INSERT INTO transaction_details (transaction_id,
+                                     stadium_merchant_id,
+                                     merchant_number,
+                                     amount_paid)
+    SELECT v_transaction_id,
+           (m ->> 'stadium_merchant_id')::INT,
+           m ->> 'merchant_number',
+           ROUND((m ->> 'amount_paid')::NUMERIC, 2)
+    FROM jsonb_array_elements(p_merchants) m;
+
+    RETURN p_event_id;
 
 END;
 $$;

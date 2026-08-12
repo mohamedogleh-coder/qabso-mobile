@@ -15,7 +15,9 @@ import '../../auth/app_user_notifer.dart';
 import 'event_notifier_provider.dart';
 import 'event_repository.dart';
 import 'models/booking_context_model.dart';
+import 'models/half_booked_event_model.dart';
 import 'time_slots_model.dart';
+import 'widgets/book_another_half_widget.dart';
 
 /// The booking flow both roles and both entry points share.
 ///
@@ -49,13 +51,34 @@ class EventBookingService {
   static String generateEventKey() =>
       (1000 + Random().nextInt(9000)).toString();
 
+  /// The signed in user, or null when nobody is signed in.
+  ///
+  /// The one place the user is read, so every flow asks the same question the
+  /// same way.
+  static AppUserModel? currentUser(WidgetRef ref) =>
+      ref.read(appUserNotifierProvider).value;
+
+  /// A manager takes money at the desk. Everyone else pays for their own
+  /// booking. This is the only role check in the whole booking flow: it picks
+  /// the payment sheet, and it decides whether the money is recorded as
+  /// `processed_by` or as `paid_user`.
+  static bool isManager(AppUserModel user) => user.role == AppUserRole.manager;
+
+  /// The text to show when something fails. A rule the database refuses comes
+  /// back with its own message, already written for the customer. Anything
+  /// else is a network or decoding failure and is shown as it came.
+  static String messageOf(Object error) {
+    if (error is PostgrestException) return error.message;
+
+    return error.toString();
+  }
+
   /// Opens the payment sheet that fits the signed-in role and returns what was
   /// collected, or null if they backed out.
   ///
-  /// A manager takes money at the desk, so they get the full sheet: split
-  /// across merchants and cash, with a discount. A customer pays the whole
-  /// amount through one of the stadium's merchants, so their sheet returns a
-  /// single allocation, wrapped here as the payment it stands for.
+  /// A manager gets the full sheet: split across merchants and cash, with a
+  /// discount. A user pays the whole amount through one merchant, so their
+  /// sheet returns one allocation, wrapped here as the payment it stands for.
   static Future<PaymentResult?> collectPayment({
     required BuildContext context,
     required WidgetRef ref,
@@ -63,7 +86,7 @@ class EventBookingService {
     required TimeSlotModel slot,
     required double amount,
   }) async {
-    final appUser = ref.read(appUserNotifierProvider).value;
+    final appUser = currentUser(ref);
 
     if (appUser == null) {
       await showAppErrorDialog(
@@ -73,7 +96,7 @@ class EventBookingService {
       return null;
     }
 
-    if (appUser.role == AppUserRole.manager) {
+    if (isManager(appUser)) {
       return showPaymentSheet(
         context: context,
         requiredAmount: amount,
@@ -117,7 +140,7 @@ class EventBookingService {
     String? eventKey,
     ValueChanged<bool>? onBusy,
   }) async {
-    final appUser = ref.read(appUserNotifierProvider).value;
+    final appUser = currentUser(ref);
 
     if (appUser == null) {
       await showAppErrorDialog(
@@ -151,7 +174,7 @@ class EventBookingService {
       return null;
     }
 
-    final isManager = appUser.role == AppUserRole.manager;
+    final takenByManager = isManager(appUser);
 
     int? eventId;
     Object? failure;
@@ -167,8 +190,8 @@ class EventBookingService {
         payments: payment.allocations,
         discount: payment.discount,
         eventKey: eventKey,
-        paidUser: isManager ? null : appUser.id,
-        processedBy: isManager ? appUser.id : null,
+        paidUser: takenByManager ? null : appUser.id,
+        processedBy: takenByManager ? appUser.id : null,
       );
 
       // The grid is what tells everyone else the slot is gone.
@@ -185,14 +208,102 @@ class EventBookingService {
       await showAppErrorDialog(
         context: context,
         title: "Booking-ku ma dhicin",
-        message: failure is PostgrestException
-            ? failure.message
-            : failure.toString(),
+        message: messageOf(failure),
       );
       return null;
     }
 
     return eventId;
+  }
+
+  /// Takes the half a booking still owes: collects the money the way this role
+  /// pays, then settles it. Returns true when the booking is now paid in full.
+  ///
+  /// Two screens do this — the card, for a public half that needs no code, and
+  /// [BookAnotherHalfWidget], for a private one after its code is typed — so
+  /// the steps live here once. [eventKey] is only for a private booking.
+  ///
+  /// The amount paid is the booking's own `remaining`. How much is owed and
+  /// who may take it are decided by `book_another_half_fn`, not here.
+  static Future<bool> settleRemainingHalf({
+    required BuildContext context,
+    required WidgetRef ref,
+    required BookingContextModel booking,
+    required HalfBookedEventModel event,
+    String? eventKey,
+    ValueChanged<bool>? onBusy,
+  }) async {
+    final appUser = currentUser(ref);
+
+    if (appUser == null) {
+      await showAppErrorDialog(
+        context: context,
+        message: "Fadlan mar kale gal si aad booking u sameyso.",
+      );
+      return false;
+    }
+
+    final payment = await collectPayment(
+      context: context,
+      ref: ref,
+      booking: booking,
+      slot: slotOf(event),
+      amount: event.remaining,
+    );
+
+    if (payment == null || !context.mounted) return false;
+
+    final takenByManager = isManager(appUser);
+
+    Object? failure;
+
+    onBusy?.call(true);
+    try {
+      await EventRepository.bookAnotherHalf(
+        eventId: event.id,
+        payments: payment.allocations,
+        discount: payment.discount,
+        eventKey: eventKey,
+        paidUser: takenByManager ? null : appUser.id,
+        processedBy: takenByManager ? appUser.id : null,
+      );
+
+      // The slot must now show as fully booked, and this booking has no half
+      // left to offer anyone.
+      ref.invalidate(eventTimeSlotsProvider(booking.fieldId));
+      ref.invalidate(halfBookedEventProvider(event.id));
+    } catch (e) {
+      failure = e;
+    } finally {
+      onBusy?.call(false);
+    }
+
+    if (!context.mounted) return false;
+
+    if (failure != null) {
+      await showAppErrorDialog(
+        context: context,
+        title: "Booking-ku ma dhicin",
+        message: messageOf(failure),
+      );
+      return false;
+    }
+
+    showSuccessSnackBar(context: context, message: "Event-ka waa la buuxiyay.");
+
+    return true;
+  }
+
+  /// A half booked event in the shape the payment sheets read, so they can
+  /// show what is being paid for without a second model to keep in step.
+  static TimeSlotModel slotOf(HalfBookedEventModel event) {
+    return TimeSlotModel(
+      startTime: event.eventStart,
+      endTime: event.eventEnd,
+      eventId: event.id,
+      eventKey: event.eventKey,
+      eventStatus: EventStatus.pending,
+    );
   }
 
   static Future<void> showBookingSuccess({
