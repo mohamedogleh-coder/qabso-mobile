@@ -1,22 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_list_widget.dart';
 import 'package:qabso_mobile/features/manager/fields/field_model.dart';
+import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
 
 import '../../../utill/app_constants.dart';
+import '../../../utill/error_widget.dart';
+import '../../../utill/loading_widget.dart';
 import 'add_new_field_screen.dart';
 
-class FieldCardWidget extends StatefulWidget {
+class FieldCardWidget extends ConsumerStatefulWidget {
   final FieldModel model;
 
   const FieldCardWidget({super.key, required this.model});
 
   @override
-  State<FieldCardWidget> createState() => _FieldCardWidgetState();
+  ConsumerState<FieldCardWidget> createState() => _FieldCardWidgetState();
 }
 
-class _FieldCardWidgetState extends State<FieldCardWidget> {
+class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
   bool expanded = false;
+
+  /// The one place on the manager's side that reads the stadium.
+  ///
+  /// The events widgets below take what they need as a
+  /// [BookingContextModel], so the customer's screens can mount the very same
+  /// list with a context built from whatever they were given — no stadium
+  /// provider required down there.
+  Widget _buildTimeSlots() {
+    final stadiumAsync = ref.watch(stadiumNotifierProvider);
+
+    return stadiumAsync.when(
+      data: (stadium) {
+        final stadiumId = stadium?.stadiumId;
+        final fieldId = widget.model.id;
+
+        if (stadiumId == null || fieldId == null) {
+          return Text(
+            "Garoonka lama helin.",
+            style: Theme.of(context).textTheme.bodySmall,
+            textAlign: TextAlign.center,
+          );
+        }
+
+        return TimeSlotsListWidget(
+          booking: BookingContextModel(
+            stadiumId: stadiumId,
+            fieldId: fieldId,
+            capacity: widget.model.capacity,
+            cost: widget.model.cost,
+            allowHalfBooking: stadium!.allowHalfBooking,
+          ),
+        );
+      },
+      error: (error, stackTrace) => ErrorRetryWidget(
+        errorMessage: error.toString(),
+        onRetry: () => ref.read(stadiumNotifierProvider.notifier).refresh(),
+      ),
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: LoadingWidget(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,11 +171,7 @@ class _FieldCardWidgetState extends State<FieldCardWidget> {
                   ? const SizedBox.shrink()
                   : Padding(
                       padding: const EdgeInsets.only(top: 12),
-                      child: TimeSlotsListWidget(
-                        fieldId: widget.model.id ?? 0,
-                        fieldCost: widget.model.cost,
-                        capacity: widget.model.capacity,
-                      ),
+                      child: _buildTimeSlots(),
                     ),
             ),
             if (expanded) Divider(height: 24),

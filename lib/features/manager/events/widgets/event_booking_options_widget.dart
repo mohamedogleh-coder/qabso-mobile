@@ -1,34 +1,30 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:qabso_mobile/features/auth/app_user_model.dart';
-import 'package:qabso_mobile/features/auth/app_user_notifer.dart';
-import 'package:qabso_mobile/features/manager/events/event_notifier_provider.dart';
-import 'package:qabso_mobile/features/manager/events/event_repository.dart';
+import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
+import 'package:qabso_mobile/features/manager/events/event_booking_service.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/selected_time_widget.dart';
-import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
-import 'package:qabso_mobile/payments/payment_allocation_model.dart';
-import 'package:qabso_mobile/payments/payment_result.dart';
-import 'package:qabso_mobile/payments/payment_widget.dart';
-import 'package:qabso_mobile/payments/user_payment_widget.dart';
-import 'package:qabso_mobile/utill/app_dailogs.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Chooses how a slot is taken — the whole match or half of it, open or locked
+/// — and books that choice.
+///
+/// Only opened when the stadium allows half bookings; with nothing to choose
+/// the card books the slot whole without this step. The two switches decide
+/// what the database is told: half becomes `pending` and leaves the rest owed,
+/// whole becomes `confirmed`, and locking generates the code that becomes the
+/// booking's `event_key`.
+///
+/// Which payment sheet opens is [EventBookingService]'s business, not this
+/// widget's, so a manager and a customer both end up here and neither is
+/// mentioned by name.
 class EventBookingOptionsWidget extends ConsumerStatefulWidget {
-  final int fieldId;
+  final BookingContextModel booking;
   final TimeSlotModel selectedTime;
-  final String? stadiumId;
-
-  final double requiredAmount;
 
   const EventBookingOptionsWidget({
     super.key,
-    required this.fieldId,
-    required this.requiredAmount,
-    this.stadiumId,
+    required this.booking,
     required this.selectedTime,
   });
 
@@ -42,27 +38,23 @@ class _EventBookingOptionsWidgetState
   bool isHalfTaken = false;
   bool isLocked = false;
   bool isBooking = false;
-  String? generateCode;
+  String? eventKey;
 
-  double get amountPaid => isHalfTaken
-      ? _money(widget.requiredAmount / 2)
-      : _money(widget.requiredAmount);
-
-  static double _money(double value) => (value * 100).roundToDouble() / 100;
-
-  String generateFourDigitCode() {
-    final random = Random();
-    return (1000 + random.nextInt(9000)).toString();
-  }
+  double get amountPaid => EventBookingService.amountDue(
+    slotPrice: widget.booking.slotPrice,
+    isHalfBooking: isHalfTaken,
+  );
 
   void _reCalculate() {
     if (isBooking) return;
 
     setState(() {
       isHalfTaken = !isHalfTaken;
+      // Only half a booking can be locked: there is no remaining half to hold
+      // for anyone once the whole slot is paid.
       if (!isHalfTaken) {
         isLocked = false;
-        generateCode = null;
+        eventKey = null;
       }
     });
   }
@@ -72,145 +64,53 @@ class _EventBookingOptionsWidgetState
 
     setState(() {
       isLocked = !isLocked;
-      generateCode = isLocked ? generateFourDigitCode() : null;
+      eventKey = isLocked ? EventBookingService.generateEventKey() : null;
     });
   }
 
+  void _setBusy(bool busy) {
+    if (!mounted) return;
+
+    setState(() => isBooking = busy);
+  }
+
+  /// Collects the payment for the current choice and books it. Backing out of
+  /// the payment sheet leaves the slot untouched.
   Future<void> _handleBooking() async {
     if (isBooking) return;
 
-    final appUser = ref.read(appUserNotifierProvider).value;
-    if (appUser == null) {
-      showAppErrorDialog(
-        context: context,
-        message: "No authenticated ,Fadlan mar kale isku day.",
-      );
-      return;
-    }
-
-    if (!widget.selectedTime.isAvailable) {
-      showAppErrorDialog(
-        context: context,
-        message: "Waqtigan horey ayaa loo qabsaday.",
-      );
-      return;
-    }
-
-    final isManager = appUser.role == AppUserRole.manager;
-
-    final payment = isManager
-        ? await _collectManagerPayment()
-        : await _collectUserPayment();
+    final payment = await EventBookingService.collectPayment(
+      context: context,
+      ref: ref,
+      booking: widget.booking,
+      slot: widget.selectedTime,
+      amount: amountPaid,
+    );
 
     if (payment == null || !mounted) return;
 
-    if (payment.allocations.isEmpty || payment.discount >= amountPaid) {
-      showAppErrorDialog(
-        context: context,
-        message: "Fadlan qiimo-dhimistu waa inay ka yar tahay lacagta la rabo.",
-      );
-      return;
-    }
-
-    setState(() => isBooking = true);
-
-    try {
-      await EventRepository.bookEvent(
-        fieldId: widget.fieldId,
-        eventStart: widget.selectedTime.startTime,
-        eventStatus: isHalfTaken ? EventStatus.pending : EventStatus.confirmed,
-        payments: payment.allocations,
-        discount: payment.discount,
-        eventKey: isLocked ? generateCode : null,
-        paidUser: isManager ? null : appUser.id,
-        processedBy: isManager ? appUser.id : null,
-      );
-
-      if (!mounted) return;
-
-      ref.invalidate(eventTimeSlotsProvider(widget.fieldId));
-
-      await _showBookingResult();
-    } on PostgrestException catch (e) {
-      if (!mounted) return;
-      await showAppErrorDialog(
-        context: context,
-        title: "Booking-ku ma dhicin",
-        message: e.message,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      await showAppErrorDialog(
-        context: context,
-        title: "Booking-ku ma dhicin",
-        message: e.toString(),
-      );
-    } finally {
-      if (mounted) setState(() => isBooking = false);
-    }
-  }
-
-  Future<PaymentResult?> _collectManagerPayment() {
-    return showPaymentSheet(
+    final eventId = await EventBookingService.book(
       context: context,
-      requiredAmount: amountPaid,
-      title: widget.selectedTime.label,
-    );
-  }
-
-  Future<PaymentResult?> _collectUserPayment() async {
-    final stadiumId =
-        widget.stadiumId ?? ref.read(stadiumNotifierProvider).value?.stadiumId;
-
-    if (stadiumId == null) {
-      showErrorSnackBar(
-        context: context,
-        message: "Garoonka lama aqoonsan karo, fadlan mar kale isku day.",
-      );
-      return null;
-    }
-
-    final allocation = await showAppBottomSheet<PaymentAllocationModel>(
-      context: context,
-      title: widget.selectedTime.label,
-      builder: (sheetContext) => UserPaymentWidget(
-        stadiumId: stadiumId,
-        requiredAmount: amountPaid,
-        timeSlotModel: widget.selectedTime,
-        onSubmit: (payment) => Navigator.pop(sheetContext, payment),
-      ),
+      ref: ref,
+      booking: widget.booking,
+      slot: widget.selectedTime,
+      payment: payment,
+      isHalfBooking: isHalfTaken,
+      eventKey: isLocked ? eventKey : null,
+      onBusy: _setBusy,
     );
 
-    if (allocation == null) return null;
+    if (eventId == null || !mounted) return;
 
-    return PaymentResult(requiredAmount: amountPaid, allocations: [allocation]);
-  }
-
-  Future<void> _showBookingResult() async {
-    final code = isLocked ? generateCode : null;
-
-    if (code != null) {
-      await showInformationDialog(
-        context: context,
-        title: "Code-ka xidhidhka",
-        message:
-            "Booking-ku waa la sameeyay.\n\nCode-ka: $code\n\n"
-            "Sii kooxda kale si ay u bixiso halfka haray.",
-        icon: Symbols.lock,
-        buttonText: "Waan haystaa",
-      );
-    }
+    await EventBookingService.showBookingSuccess(
+      context: context,
+      isHalfBooking: isHalfTaken,
+      eventKey: isLocked ? eventKey : null,
+    );
 
     if (!mounted) return;
 
-    showSuccessSnackBar(
-      context: context,
-      message: isHalfTaken
-          ? "Waxa la diwaan geliyay half booking."
-          : "Booking-ka waa la sameeyay.",
-    );
-
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(eventId);
   }
 
   @override
@@ -218,6 +118,7 @@ class _EventBookingOptionsWidgetState
     final theme = Theme.of(context);
 
     return PopScope(
+      // A booking in flight must not be dismissed out from under itself.
       canPop: !isBooking,
       child: Padding(
         padding: const EdgeInsets.all(8.0),

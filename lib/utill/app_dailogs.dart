@@ -388,6 +388,24 @@ Future<void> showInformationDialog({
   );
 }
 
+/// The placeholder for a flow that is planned but not built yet, shared so
+/// every unfinished action says the same thing the same way instead of each
+/// screen inventing its own wording.
+Future<void> showNotImplementedDialog({
+  required BuildContext context,
+  String title = "Weli lama dhisin",
+  String message = "Qaybtan weli lama dhisin, waa la soo dari doonaa.",
+  String buttonText = "Ok",
+}) {
+  return showInformationDialog(
+    context: context,
+    title: title,
+    message: message,
+    icon: Symbols.construction,
+    buttonText: buttonText,
+  );
+}
+
 /// An error alert with a single acknowledge button. [onTap] defaults to
 /// simply closing the dialog.
 Future<void> showAppErrorDialog({

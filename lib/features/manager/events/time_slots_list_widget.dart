@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/event_notifier_provider.dart';
 import 'package:qabso_mobile/features/manager/events/time_slot_card_widget.dart';
 import 'package:qabso_mobile/utill/app_utility_service.dart';
@@ -16,17 +17,15 @@ final selectedDateProvider = StateProvider.autoDispose<DateTime>((ref) {
   return DateTime(now.year, now.month, now.day);
 });
 
+/// One field's day of slots.
+///
+/// Takes everything it needs as a [BookingContextModel] rather than reading a
+/// provider, so a manager's field card and a customer's stadium screen can
+/// both mount it.
 class TimeSlotsListWidget extends ConsumerStatefulWidget {
-  final int fieldId;
-  final double fieldCost;
-  final int capacity;
+  final BookingContextModel booking;
 
-  const TimeSlotsListWidget({
-    super.key,
-    required this.fieldId,
-    required this.fieldCost,
-    required this.capacity,
-  });
+  const TimeSlotsListWidget({super.key, required this.booking});
 
   @override
   ConsumerState<TimeSlotsListWidget> createState() =>
@@ -34,19 +33,13 @@ class TimeSlotsListWidget extends ConsumerStatefulWidget {
 }
 
 class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
-  late double requiredAmount;
-
-  @override
-  void initState() {
-    super.initState();
-    requiredAmount = (widget.capacity * widget.fieldCost);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selectedDate = ref.watch(selectedDateProvider);
-    final slotsAsync = ref.watch(eventTimeSlotsProvider(widget.fieldId));
+    final slotsAsync = ref.watch(
+      eventTimeSlotsProvider(widget.booking.fieldId),
+    );
 
     return Column(
       children: [
@@ -84,9 +77,8 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
               children: slots
                   .map(
                     (slot) => TimeSlotCardWidget(
-                      fieldId: widget.fieldId,
+                      booking: widget.booking,
                       slotModel: slot,
-                      requiredAmount: requiredAmount,
                     ),
                   )
                   .toList(),
@@ -98,8 +90,9 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
             }
             return ErrorRetryWidget(
               errorMessage: error.toString(),
-              onRetry: () =>
-                  ref.invalidate(eventTimeSlotsProvider(widget.fieldId)),
+              onRetry: () => ref.invalidate(
+                eventTimeSlotsProvider(widget.booking.fieldId),
+              ),
             );
           },
           loading: () => LoadingWidget(),

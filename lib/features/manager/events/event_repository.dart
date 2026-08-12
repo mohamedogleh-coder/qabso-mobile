@@ -2,10 +2,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../payments/payment_allocation_model.dart';
 import '../../../utill/app_date_util.dart';
+import 'models/half_booked_event_model.dart';
 import 'time_slots_model.dart';
 
 class EventRepository {
   static final SupabaseClient _client = Supabase.instance.client;
+
+  static const _eventsTable = 'event_bookings';
 
   static Future<List<TimeSlotModel>> getTimeSlots({
     required int fieldId,
@@ -24,6 +27,32 @@ class EventRepository {
     return rows
         .map((row) => TimeSlotModel.fromJson(row as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Reads the booking whose other half is still owed.
+  ///
+  /// Scoped to `pending` as well as to the id, because that status *is* "still
+  /// owes something": `chk_event_status_remaining` ties it to `remaining > 0`.
+  /// So a booking that never existed, was settled by someone else in the
+  /// meantime, or was cancelled all match nothing here and throw, rather than
+  /// coming back as a booking with no half left to take. The `.maybeSingle()`
+  /// is what makes that visible — a filter matching no row is otherwise
+  /// silently null.
+  static Future<HalfBookedEventModel> getHalfBookedEvent({
+    required int eventId,
+  }) async {
+    final row = await _client
+        .from(_eventsTable)
+        .select('id, event_start, event_end, event_key, extra_time, remaining')
+        .eq('id', eventId)
+        .eq('event_status', 'pending')
+        .maybeSingle();
+
+    if (row == null) {
+      throw StateError('Event $eventId is not a pending half booking.');
+    }
+
+    return HalfBookedEventModel.fromJson(row);
   }
 
   /// Books one slot and records the payment taken for it, returning the new

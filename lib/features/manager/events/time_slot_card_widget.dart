@@ -3,23 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:qabso_mobile/features/manager/events/event_booking_service.dart';
+import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
+import 'package:qabso_mobile/features/manager/events/widgets/book_another_half_widget.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/event_booking_options_widget.dart';
-import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
 
 final selectedTimeSlotProvider = StateProvider<TimeSlotModel?>((ref) => null);
 
 class TimeSlotCardWidget extends ConsumerStatefulWidget {
-  final int fieldId;
+  final BookingContextModel booking;
   final TimeSlotModel slotModel;
-  final double requiredAmount;
 
   const TimeSlotCardWidget({
     super.key,
-    required this.fieldId,
+    required this.booking,
     required this.slotModel,
-    required this.requiredAmount,
   });
 
   @override
@@ -27,37 +27,124 @@ class TimeSlotCardWidget extends ConsumerStatefulWidget {
 }
 
 class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
-  double amountPaid = 0;
+  bool isBooking = false;
 
-  @override
-  void initState() {
-    super.initState();
+  void _setBusy(bool busy) {
+    if (!mounted) return;
+
+    setState(() => isBooking = busy);
+
+    if (busy) {
+      showAppLoadingDialog(context: context, message: "Booking...");
+    } else {
+      hideAppLoadingDialog(context);
+    }
   }
 
-  Future<void> _openPaymentSheet() async {
-    final stadium = ref.read(stadiumNotifierProvider).value;
-    // final payment = await showPaymentSheet(
-    //   context: context,
-    //   requiredAmount: 10,
-    //   title: widget.slotModel.label,
-    // );
-    //
-    // if (payment == null || !mounted) return;
-    //
-    // final split = payment.allocations
-    //     .map(
-    //       (a) =>
-    //           "${a.methodName} \$${a.amountPaid.toStringAsFixed(2)}"
-    //           "${a.isCash ? '' : ' (${a.merchantNumber})'}",
-    //     )
-    //     .join(", ");
-    //
-    // showSuccessSnackBar(
-    //   context: context,
-    //   message:
-    //       "Required \$${payment.requiredAmount.toStringAsFixed(2)}, "
-    //       "discount \$${payment.discount.toStringAsFixed(2)} → $split",
-    // );
+  Future<void> _handleTap() async {
+    if (isBooking) return;
+
+    if (!widget.slotModel.isAvailable) {
+      if (widget.slotModel.eventStatus == EventStatus.pending) {
+        await _openRemainingHalf();
+      } else {
+        await _showBookedSlotAction();
+      }
+      return;
+    }
+
+    if (widget.booking.allowHalfBooking) {
+      await _openBookingOptions();
+      return;
+    }
+
+    await _bookWholeSlot();
+  }
+
+  /// A booking that still owes half. A locked one asks for its code first, so
+  /// it opens [BookAnotherHalfWidget]; an open one is offered to anyone, so it
+  /// goes straight to the payment sheet that fits the signed-in role.
+  ///
+  /// Taking the half is not written yet: what is collected here is not settled
+  /// against the booking, which is `book_another_half_fn`'s job to come.
+  Future<void> _openRemainingHalf() async {
+    final eventId = widget.slotModel.eventId;
+
+    if (eventId == null) {
+      await _showBookedSlotAction();
+      return;
+    }
+
+    if (widget.slotModel.isPrivate) {
+      await showAppBottomSheet<bool>(
+        context: context,
+        builder: (sheetContext) => BookAnotherHalfWidget(eventId: eventId),
+      );
+      return;
+    }
+
+    await EventBookingService.collectPayment(
+      context: context,
+      ref: ref,
+      booking: widget.booking,
+      slot: widget.slotModel,
+      // What the first team left owing is the other half of the slot.
+      amount: EventBookingService.amountDue(
+        slotPrice: widget.booking.slotPrice,
+        isHalfBooking: true,
+      ),
+    );
+  }
+
+  /// What can be done with a booking already paid in full — cancelling it,
+  /// moving it — is not built yet.
+  Future<void> _showBookedSlotAction() {
+    return showNotImplementedDialog(
+      context: context,
+      message: "Maamulka booking-ga la xaqiijiyay weli lama dhisin.",
+    );
+  }
+
+  Future<void> _openBookingOptions() {
+    return showAppBottomSheet<int>(
+      context: context,
+      builder: (sheetContext) => EventBookingOptionsWidget(
+        booking: widget.booking,
+        selectedTime: widget.slotModel,
+      ),
+    );
+  }
+
+  Future<void> _bookWholeSlot() async {
+    final payment = await EventBookingService.collectPayment(
+      context: context,
+      ref: ref,
+      booking: widget.booking,
+      slot: widget.slotModel,
+      amount: EventBookingService.amountDue(
+        slotPrice: widget.booking.slotPrice,
+        isHalfBooking: false,
+      ),
+    );
+
+    if (payment == null || !mounted) return;
+
+    final eventId = await EventBookingService.book(
+      context: context,
+      ref: ref,
+      booking: widget.booking,
+      slot: widget.slotModel,
+      payment: payment,
+      isHalfBooking: false,
+      onBusy: _setBusy,
+    );
+
+    if (eventId == null || !mounted) return;
+
+    await EventBookingService.showBookingSuccess(
+      context: context,
+      isHalfBooking: false,
+    );
   }
 
   @override
@@ -99,29 +186,7 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
       child: Card(
         elevation: 0,
         child: InkWell(
-          onTap: () {
-            showAppBottomSheet(
-              context: context,
-              builder: (context) {
-                final stadium = ref.read(stadiumNotifierProvider).value;
-                return EventBookingOptionsWidget(
-                  fieldId: widget.fieldId,
-                  stadiumId: stadium?.stadiumId,
-                  selectedTime: widget.slotModel,
-                  requiredAmount: widget.requiredAmount,
-                );
-                // return UserPaymentWidget(
-                //   stadiumId: stadium!.stadiumId!,
-                //   requiredAmount: 10,
-                //   timeSlotModel: widget.slotModel,
-                //   onSubmit: (value) {
-                //     print("Clicked");
-                //     print("Values $value");
-                //   },
-                // );
-              },
-            );
-          },
+          onTap: isBooking ? null : _handleTap,
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
