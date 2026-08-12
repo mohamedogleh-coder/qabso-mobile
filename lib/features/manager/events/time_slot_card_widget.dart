@@ -11,11 +11,13 @@ import 'package:qabso_mobile/utill/app_dailogs.dart';
 final selectedTimeSlotProvider = StateProvider<TimeSlotModel?>((ref) => null);
 
 class TimeSlotCardWidget extends ConsumerStatefulWidget {
+  final int fieldId;
   final TimeSlotModel slotModel;
   final double requiredAmount;
 
   const TimeSlotCardWidget({
     super.key,
+    required this.fieldId,
     required this.slotModel,
     required this.requiredAmount,
   });
@@ -103,6 +105,8 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
               builder: (context) {
                 final stadium = ref.read(stadiumNotifierProvider).value;
                 return EventBookingOptionsWidget(
+                  fieldId: widget.fieldId,
+                  stadiumId: stadium?.stadiumId,
                   selectedTime: widget.slotModel,
                   requiredAmount: widget.requiredAmount,
                 );

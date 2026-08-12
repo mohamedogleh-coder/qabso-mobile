@@ -84,6 +84,7 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
               children: slots
                   .map(
                     (slot) => TimeSlotCardWidget(
+                      fieldId: widget.fieldId,
                       slotModel: slot,
                       requiredAmount: requiredAmount,
                     ),
