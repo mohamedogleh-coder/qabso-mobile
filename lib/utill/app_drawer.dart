@@ -67,40 +67,74 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildMenuTile(BuildContext context, MenuItemsModel item) {
-    return ListTile(
-      leading: Container(
-        height: 40,
-        width: 40,
-        decoration: BoxDecoration(
-          color: item.backgroundColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(item.iconData, color: item.foregroundColor, size: 22),
-      ),
-      title: Text(item.label, style: Theme.of(context).textTheme.bodyLarge),
+    return _buildTile(
+      context: context,
+      iconData: item.iconData,
+      label: item.label,
+      color: item.foregroundColor,
       onTap: () => _openItem(context, item),
     );
   }
 
   Widget _buildLogoutTile(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Container(
-        height: 40,
-        width: 40,
-        decoration: BoxDecoration(
-          color: colorScheme.error.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(Icons.logout, color: colorScheme.error, size: 22),
-      ),
-      title: Text(
-        "Logout",
-        style: Theme.of(
-          context,
-        ).textTheme.bodyLarge!.copyWith(color: colorScheme.error),
-      ),
+    return _buildTile(
+      context: context,
+      iconData: Icons.logout,
+      label: "Logout",
+      color: Theme.of(context).colorScheme.error,
       onTap: () => _confirmLogout(context),
+    );
+  }
+
+  Widget _buildTile({
+    required BuildContext context,
+    required IconData iconData,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        // color: Color.alphaBlend(
+        //   // color.withValues(alpha: 0.18),
+        //   // theme.colorScheme.surface,
+        // ),
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          splashColor: color.withValues(alpha: 0.14),
+          highlightColor: color.withValues(alpha: 0.06),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  height: 35,
+                  width: 35,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(iconData, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.bodyMedium!.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

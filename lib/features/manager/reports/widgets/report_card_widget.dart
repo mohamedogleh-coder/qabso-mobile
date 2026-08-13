@@ -26,7 +26,7 @@ class ReportCardWidget extends StatelessWidget {
 
     return Material(
       color: cardColor,
-      elevation: 2,
+      elevation: 0,
       // shadowColor: model.foregroundColor.withValues(alpha: 0.45),
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
