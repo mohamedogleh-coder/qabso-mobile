@@ -17,8 +17,6 @@ class ReportsScreen extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            // A fixed height keeps the cards steady when the phone is small
-            // or the user picks a bigger text size.
             mainAxisExtent: 150,
           ),
           itemBuilder: (context, index) {

@@ -52,5 +52,5 @@ abstract class AppConstants {
   static const String reports = '/reports';
   static const String expansesReport = '/expanses_report';
   static const String eventsReport = '/events_report';
-  static const String merchantsReport = '/merchants_report';
+  static const String paymentsReport = '/payments_report';
 }

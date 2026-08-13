@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/reports/reports_repository.dart';
+import 'package:qabso_mobile/features/manager/reports/widgets/report_based_widget.dart';
 import 'package:qabso_mobile/features/manager/stadium/stadium_notifier_provider.dart';
 import 'package:qabso_mobile/utill/app_constants.dart';
 
-import '../../../../utill/app_date_util.dart';
 import '../../../../utill/error_widget.dart';
 import '../../../../utill/loading_widget.dart';
 import '../models/event_summery_model.dart';
@@ -83,7 +83,7 @@ class _EventsSummeryScreenState extends ConsumerState<EventsSummeryScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
-          child: _buildDateRangeBar(),
+          child: ReportBasedWidget(selectedDateRange: selectedDateRange),
         ),
       ),
       body: SafeArea(
@@ -109,57 +109,6 @@ class _EventsSummeryScreenState extends ConsumerState<EventsSummeryScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildDateRangeBar() {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: _pickDateRange,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        child: Row(
-          children: [
-            const Text("Report based on"),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Row(
-                children: [
-                  Icon(
-                    Symbols.calendar_month,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _dateRangeLabel(),
-                    style: theme.textTheme.bodySmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _dateRangeLabel() {
-    final start = AppDateUtil.formatDate(
-      selectedDateRange.start,
-      pattern: 'dd MMM yyyy',
-    );
-    final end = AppDateUtil.formatDate(
-      selectedDateRange.end,
-      pattern: 'dd MMM yyyy',
-    );
-
-    return start == end
-        ? (start ==
-                  AppDateUtil.formatDate(DateTime.now(), pattern: 'dd MMM yyyy')
-              ? "Today"
-              : start)
-        : "$start  -  $end";
   }
 
   Widget _buildList(List<EventsSummaryModel> summaries) {

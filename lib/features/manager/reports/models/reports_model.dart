@@ -38,10 +38,10 @@ final reportsList = [
 
   ReportsModel(
     iconData: Symbols.account_balance_wallet_sharp,
-    label: "Merchants Report",
+    label: "Payments Report",
     backgroundColor: const Color(0xFFECFDF5),
     foregroundColor: const Color(0xFF059669),
-    path: AppConstants.merchantsReport,
+    path: AppConstants.paymentsReport,
     description: "Money in every merchant",
   ),
 ];

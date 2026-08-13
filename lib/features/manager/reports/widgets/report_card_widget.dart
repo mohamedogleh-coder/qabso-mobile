@@ -16,8 +16,6 @@ class ReportCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Light and dark use the same recipe: tint the theme surface with the
-    // report colour, then write the label in the normal text colour.
     final cardColor = Color.alphaBlend(
       model.foregroundColor.withValues(alpha: 0.18),
       theme.colorScheme.surface,
