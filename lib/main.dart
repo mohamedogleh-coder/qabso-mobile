@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qabso_mobile/features/manager/reports/reports_screen.dart';
 import 'package:qabso_mobile/themes/dark_theme.dart';
 import 'package:qabso_mobile/themes/light_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -47,15 +48,13 @@ class MyApp extends StatelessWidget {
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
       home: const AuthGate(),
-      // The drawer opens these by name, so every screen it lists needs a
-      // route here.
       routes: {
         AppConstants.fields: (_) => const FieldsScreen(),
         AppConstants.workingDays: (_) => const WorkingDaysScreen(),
         AppConstants.merchants: (_) => const StadiumMerchantsScreen(),
         AppConstants.stadiumProfile: (_) => const StadiumSettingsScreen(),
+        AppConstants.reports: (_) => const ReportsScreen(),
       },
-      // Reports and Expanses have no screen yet.
       onUnknownRoute: (settings) => MaterialPageRoute(
         builder: (_) => Scaffold(
           appBar: AppBar(),

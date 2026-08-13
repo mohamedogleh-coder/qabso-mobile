@@ -50,6 +50,7 @@ final ThemeData lightTheme = ThemeData(
   ),
 
   appBarTheme: const AppBarTheme(
+    titleSpacing: 2,
     titleTextStyle: TextStyle(
       fontSize: 18,
       color: Colors.black,

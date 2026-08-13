@@ -52,6 +52,7 @@ final ThemeData darkTheme = ThemeData(
   ),
 
   appBarTheme: const AppBarTheme(
+    titleSpacing: 2,
     titleTextStyle: TextStyle(
       fontSize: 18,
       color: Colors.white,

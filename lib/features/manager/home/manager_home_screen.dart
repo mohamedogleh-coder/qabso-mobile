@@ -13,7 +13,7 @@ class ManagerHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: AppDrawer(items: managerMenuList, title: stadium.stadiumName),
-      appBar: AppBar(titleSpacing: 2,title: Text(stadium.stadiumName)),
+      appBar: AppBar(title: Text(stadium.stadiumName)),
     );
   }
 }

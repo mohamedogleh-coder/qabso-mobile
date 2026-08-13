@@ -66,9 +66,8 @@ final managerMenuList = [
     label: "Reports",
     backgroundColor: const Color(0xFFF3E5F5),
     foregroundColor: const Color(0xFF8E24AA),
-    path: AppConstants.events,
+    path: AppConstants.reports,
   ),
-
 
   MenuItemsModel(
     iconData: Symbols.settings,
@@ -78,6 +77,7 @@ final managerMenuList = [
     path: AppConstants.stadiumProfile,
   ),
 ];
+
 
 final userMenuList = [
   MenuItemsModel(

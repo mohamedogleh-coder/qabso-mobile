@@ -21,7 +21,7 @@ class AppDrawer extends StatelessWidget {
           children: [
             _buildHeader(context),
             const Divider(height: 1),
-            const SizedBox(height: 12,),
+            const SizedBox(height: 12),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -112,7 +112,7 @@ class AppDrawer extends StatelessWidget {
         mainAxisAlignment: .center,
         children: [
           Text(AppConstants.appName, style: textStyle),
-          const SizedBox(width: 12,),
+          const SizedBox(width: 12),
           Text(AppConstants.appVersion, style: textStyle),
         ],
       ),
@@ -120,7 +120,6 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _openItem(BuildContext context, MenuItemsModel item) {
-    // Navigator.pop(context);
     if (item.path == AppConstants.dashboard) return;
     Navigator.pushNamed(context, item.path);
   }

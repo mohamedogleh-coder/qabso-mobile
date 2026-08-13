@@ -49,9 +49,6 @@ class ManagerShell extends ConsumerWidget {
               const SizedBox(height: 8),
               FilledButton.icon(
                 onPressed: () {
-                  // push (not pushReplacement): keeps the shell on the stack
-                  // so StadiumSettingsScreen's own submit handler has a route
-                  // to pop back to on success.
                   Navigator.push(
                     context,
                     MaterialPageRoute(

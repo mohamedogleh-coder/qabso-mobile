@@ -46,4 +46,11 @@ abstract class AppConstants {
   static const String merchants = '/merchants';
   static const String events = '/events';
   static const String expenses = '/expenses';
+
+
+  //Reports path
+  static const String reports = '/reports';
+  static const String expansesReport = '/expanses_report';
+  static const String eventsReport = '/events_report';
+  static const String merchantsReport = '/merchants_report';
 }
