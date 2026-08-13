@@ -9,8 +9,13 @@ import 'features/auth/app_user_model.dart';
 import 'features/auth/app_user_notifer.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/registration_screen.dart';
+import 'features/manager/fields/fields_screen.dart';
 import 'features/manager/manager_shell.dart';
+import 'features/manager/merchants/stadium_merchants_screen.dart';
+import 'features/manager/stadium/stadium_settings_screen.dart';
+import 'features/manager/working_days/working_days_screen.dart';
 import 'features/user/user_shell.dart';
+import 'utill/app_constants.dart';
 import 'utill/app_utility_service.dart';
 
 void main() async {
@@ -42,6 +47,21 @@ class MyApp extends StatelessWidget {
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
       home: const AuthGate(),
+      // The drawer opens these by name, so every screen it lists needs a
+      // route here.
+      routes: {
+        AppConstants.fields: (_) => const FieldsScreen(),
+        AppConstants.workingDays: (_) => const WorkingDaysScreen(),
+        AppConstants.merchants: (_) => const StadiumMerchantsScreen(),
+        AppConstants.stadiumProfile: (_) => const StadiumSettingsScreen(),
+      },
+      // Reports and Expanses have no screen yet.
+      onUnknownRoute: (settings) => MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: Text("Coming soon")),
+        ),
+      ),
     );
   }
 }

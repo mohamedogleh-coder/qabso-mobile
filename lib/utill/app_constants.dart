@@ -35,6 +35,7 @@ abstract class AppConstants {
   static const Duration animationDuration = Duration(milliseconds: 300);
 
   static const String appName = 'Playground';
+  static const String appVersion = 'V1.0';
 
   static const String splash = '/';
   static const String login = '/login';
@@ -44,4 +45,5 @@ abstract class AppConstants {
   static const String workingDays = '/working-days';
   static const String merchants = '/merchants';
   static const String events = '/events';
+  static const String expenses = '/expenses';
 }
