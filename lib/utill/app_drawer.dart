@@ -124,7 +124,7 @@ class AppDrawer extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: theme.textTheme.bodyMedium!.copyWith(
+                    style: theme.textTheme.bodyLarge!.copyWith(
                       color: theme.colorScheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,

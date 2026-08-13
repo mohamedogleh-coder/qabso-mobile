@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qabso_mobile/features/manager/reports/reports_screen.dart';
+import 'package:qabso_mobile/features/manager/reports/screens/events_summery_screen.dart';
+import 'package:qabso_mobile/features/manager/reports/screens/reports_screen.dart';
 import 'package:qabso_mobile/themes/dark_theme.dart';
 import 'package:qabso_mobile/themes/light_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
         AppConstants.merchants: (_) => const StadiumMerchantsScreen(),
         AppConstants.stadiumProfile: (_) => const StadiumSettingsScreen(),
         AppConstants.reports: (_) => const ReportsScreen(),
+        AppConstants.eventsReport: (_) => const EventsSummeryScreen(),
       },
       onUnknownRoute: (settings) => MaterialPageRoute(
         builder: (_) => Scaffold(
