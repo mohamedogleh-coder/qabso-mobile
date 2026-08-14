@@ -108,13 +108,19 @@ class MerchantNotifierProvider
     return _merchantIn(saved, merchant.id);
   }
 
-  /// Deletes [merchant] and drops it from state on success. Unlike the
-  /// writes above, the repository returns nothing to replace state with, so
-  /// the entry is removed locally — no re-fetch.
+  /// Turns [merchant] off, or back on, and flips it in state on success.
+  /// Unlike the writes above, the repository returns nothing to replace state
+  /// with, so the entry is changed locally — no re-fetch.
   ///
-  /// Shares the `_isSaving` guard with them, so a delete can't overlap a
-  /// save (or a second delete) and resurrect a row that has just gone.
-  Future<void> deleteMerchant(StadiumMerchantModel merchant) async {
+  /// The merchant stays in the list either way: a number that has taken money
+  /// is kept so past payments still resolve.
+  ///
+  /// Shares the `_isSaving` guard with the writes above, so this cannot
+  /// overlap a save and undo what it just wrote.
+  Future<void> setMerchantDisabled(
+    StadiumMerchantModel merchant,
+    bool disabled,
+  ) async {
     if (_isSaving) {
       throw StateError('A merchants save is already in progress.');
     }
@@ -124,24 +130,28 @@ class MerchantNotifierProvider
       throw ArgumentError.value(
         merchant,
         'merchant',
-        'An unregistered merchant cannot be deleted.',
+        'An unregistered merchant cannot be turned off.',
       );
     }
 
     final stadiumId = ref.read(stadiumNotifierProvider).value?.stadiumId;
     if (stadiumId == null) {
-      throw StateError('Cannot delete a merchant: no stadium yet.');
+      throw StateError('Cannot change a merchant: no stadium yet.');
     }
 
     _isSaving = true;
     try {
-      await MerchantRepository.deleteMerchant(
+      await MerchantRepository.setMerchantDisabled(
         stadiumId: stadiumId,
         merchantId: merchantId,
+        disabled: disabled,
       );
       state = AsyncData([
         for (final saved in state.value ?? const <StadiumMerchantModel>[])
-          if (saved.id != merchantId) saved,
+          if (saved.id == merchantId)
+            saved.copyWith(disabled: disabled)
+          else
+            saved,
       ]);
     } finally {
       _isSaving = false;

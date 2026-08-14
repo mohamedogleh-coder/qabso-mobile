@@ -5,21 +5,24 @@ import 'package:qabso_mobile/features/manager/merchants/stadium_merchant_model.d
 /// One registered payment number: the provider it belongs to, the service
 /// customers know it by, and the number itself.
 ///
-/// Tapping the card is the edit affordance ([onTap]); the trailing icon
-/// deletes ([onDelete]). Both are optional — with neither, the card is a
-/// plain read-only summary.
+/// Tapping the card is the edit affordance ([onTap]); the trailing icon turns
+/// the number off, or back on ([onToggleDisabled]). Both are optional — with
+/// neither, the card is a plain read-only summary.
+///
+/// A number is never deleted, so a disabled one stays on the list, dimmed and
+/// labelled.
 class MerchantCardWidget extends StatelessWidget {
   const MerchantCardWidget({
     super.key,
     required this.model,
     this.onTap,
-    this.onDelete,
+    this.onToggleDisabled,
   });
 
   final StadiumMerchantModel model;
 
   final VoidCallback? onTap;
-  final VoidCallback? onDelete;
+  final VoidCallback? onToggleDisabled;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +40,9 @@ class MerchantCardWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary,
+                  color: model.disabled
+                      ? colorScheme.outline
+                      : colorScheme.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -52,9 +57,26 @@ class MerchantCardWidget extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      model.merchantNumber,
-                      style: theme.textTheme.headlineMedium,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            model.merchantNumber,
+                            style: theme.textTheme.headlineMedium,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (model.disabled) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            "Disabled",
+                            style: theme.textTheme.bodySmall!.copyWith(
+                              color: colorScheme.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -73,11 +95,16 @@ class MerchantCardWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onDelete != null)
+              if (onToggleDisabled != null)
                 IconButton(
-                  onPressed: onDelete,
-                  tooltip: "Delete",
-                  icon: Icon(Symbols.delete, color: colorScheme.error),
+                  onPressed: onToggleDisabled,
+                  tooltip: model.disabled ? "Enable" : "Disable",
+                  icon: Icon(
+                    model.disabled ? Symbols.play_circle : Symbols.block,
+                    color: model.disabled
+                        ? colorScheme.primary
+                        : colorScheme.error,
+                  ),
                 ),
             ],
           ),

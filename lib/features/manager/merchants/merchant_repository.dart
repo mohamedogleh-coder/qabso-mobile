@@ -9,7 +9,8 @@ class MerchantRepository {
   static const _merchantsTable = 'stadium_merchants';
   static const _providersTable = 'providers';
 
-  static const _merchantColumns = 'id, merchant_number, provider:providers(*)';
+  static const _merchantColumns =
+      'id, merchant_number, disabled, provider:providers(*)';
 
   /// Reads the payment providers a merchant number can belong to — a fixed
   /// lookup seeded by migration, the same for every stadium, so it isn't
@@ -87,22 +88,29 @@ class MerchantRepository {
     );
   }
 
-  /// Removes one merchant number. Scoped by `stadium_id` as well as `id`, so
-  /// an id belonging to another stadium matches nothing and throws rather
-  /// than deleting it — the `.select()` is what makes that visible, since a
-  /// delete matching no row is otherwise silently fine.
-  static Future<void> deleteMerchant({
+  /// Turns one merchant number off, or back on.
+  ///
+  /// A number that has taken money is part of the ledger and cannot be
+  /// deleted — `transaction_details` points at it with ON DELETE RESTRICT —
+  /// so this is how a manager retires one.
+  ///
+  /// Scoped by `stadium_id` as well as `id`, so an id belonging to another
+  /// stadium matches nothing and throws rather than being changed. The
+  /// `.select()` is what makes that visible, since an update matching no row
+  /// is otherwise silently fine.
+  static Future<void> setMerchantDisabled({
     required String stadiumId,
     required int merchantId,
+    required bool disabled,
   }) async {
-    final deletedRows = await _client
+    final updatedRows = await _client
         .from(_merchantsTable)
-        .delete()
+        .update({'disabled': disabled})
         .eq('id', merchantId)
         .eq('stadium_id', stadiumId)
         .select('id');
 
-    if (deletedRows.isEmpty) {
+    if (updatedRows.isEmpty) {
       throw StateError(
         'Merchant $merchantId is not registered to this stadium.',
       );

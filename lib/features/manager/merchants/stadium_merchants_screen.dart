@@ -59,21 +59,30 @@ class _StadiumMerchantsScreenState
     }
   }
 
-  Future<void> _deleteMerchant(StadiumMerchantModel merchant) async {
-    final deleted = await showAppConfirmationDialog(
+  /// A number that has taken money is kept, so it is turned off instead of
+  /// being removed. The same action turns it back on.
+  Future<void> _toggleMerchantDisabled(StadiumMerchantModel merchant) async {
+    final disable = !merchant.disabled;
+    final action = disable ? "Disable" : "Enable";
+
+    final changed = await showAppConfirmationDialog(
       context: context,
-      title: "Delete merchant?",
+      title: "$action merchant?",
       message:
-          "Ma hubtaa inaad delete-garayso merchantka (${merchant.merchantNumber} ${merchant.provider.providerName})",
-      confirmText: "Delete",
-      isDestructive: true,
-      icon: Symbols.delete,
-      onConfirm: () =>
-          ref.read(merchantNotifierProvider.notifier).deleteMerchant(merchant),
+          "Ma hubtaa inaad ${action.toLowerCase()}-garayso merchantka (${merchant.merchantNumber} ${merchant.provider.providerName})",
+      confirmText: action,
+      isDestructive: disable,
+      icon: disable ? Symbols.block : Symbols.play_circle,
+      onConfirm: () => ref
+          .read(merchantNotifierProvider.notifier)
+          .setMerchantDisabled(merchant, disable),
     );
 
-    if (deleted && mounted) {
-      showSuccessSnackBar(context: context, message: "Merchant deleted.");
+    if (changed && mounted) {
+      showSuccessSnackBar(
+        context: context,
+        message: disable ? "Merchant disabled." : "Merchant enabled.",
+      );
     }
   }
 
@@ -213,9 +222,9 @@ class _StadiumMerchantsScreenState
                   child: MerchantCardWidget(
                     model: merchant,
                     onTap: isSubmitting ? null : () => _editMerchant(merchant),
-                    onDelete: isSubmitting
+                    onToggleDisabled: isSubmitting
                         ? null
-                        : () => _deleteMerchant(merchant),
+                        : () => _toggleMerchantDisabled(merchant),
                   ),
                 ),
               const SizedBox(height: 12),

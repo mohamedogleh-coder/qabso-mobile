@@ -328,11 +328,16 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
     );
   }
 
+  /// A disabled number is kept so past payments still resolve, but it must not
+  /// take new money, so it is not offered here.
   Widget _buildMethodsSection(
     PaymentResult payment,
-    List<StadiumMerchantModel> merchants,
+    List<StadiumMerchantModel> allMerchants,
   ) {
     final theme = Theme.of(context);
+    final merchants = allMerchants
+        .where((merchant) => !merchant.disabled)
+        .toList();
 
     return _buildSection(
       icon: Symbols.account_balance_wallet,

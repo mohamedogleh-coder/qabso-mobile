@@ -55,8 +55,15 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
     _merchantsFuture = _fetchMerchants();
   }
 
-  Future<List<StadiumMerchantModel>> _fetchMerchants() =>
-      MerchantRepository.getMerchants(stadiumId: widget.stadiumId);
+  /// Only the numbers still taking money are offered. A disabled number is
+  /// kept so past payments still resolve, not so new ones can go to it.
+  Future<List<StadiumMerchantModel>> _fetchMerchants() async {
+    final merchants = await MerchantRepository.getMerchants(
+      stadiumId: widget.stadiumId,
+    );
+
+    return merchants.where((merchant) => !merchant.disabled).toList();
+  }
 
   void _reload() {
     setState(() {
