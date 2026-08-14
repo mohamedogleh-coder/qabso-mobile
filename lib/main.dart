@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qabso_mobile/features/manager/expanses/add_expanse_screen.dart';
+import 'package:qabso_mobile/features/manager/expanses/expanses_list_screen.dart';
 import 'package:qabso_mobile/features/manager/expanses/expanses_screen.dart';
 import 'package:qabso_mobile/features/manager/reports/screens/events_summery_screen.dart';
 import 'package:qabso_mobile/features/manager/reports/screens/payments_summery_screen.dart';
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
         AppConstants.paymentsReport: (_) => const PaymentsSummeryScreen(),
         AppConstants.expenses: (_) => const ExpansesScreen(),
         AppConstants.addExpense: (_) => const AddExpanseScreen(),
+        AppConstants.expensesList: (_) => const ExpansesListScreen(),
       },
       onUnknownRoute: (settings) => MaterialPageRoute(
         builder: (_) => Scaffold(

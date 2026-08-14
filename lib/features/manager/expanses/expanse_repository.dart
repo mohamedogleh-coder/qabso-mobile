@@ -9,14 +9,36 @@ class ExpanseRepository {
 
   static const _expensesTable = 'expenses';
 
+  /// Reads the stadium's expenses, newest first.
+  ///
+  /// The dates and the type narrow the read in the database, so the screen
+  /// only ever holds the rows it shows.
   static Future<List<ExpanseModel>> getExpanses({
     required String stadiumId,
+    DateTime? startDate,
+    DateTime? endDate,
+    ExpanseType? type,
   }) async {
-    final rows = await _client
+    if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+      throw ArgumentError('The start date cannot be after the end date.');
+    }
+
+    var query = _client
         .from(_expensesTable)
         .select()
-        .eq('stadium_id', stadiumId)
-        .order('expense_date', ascending: false);
+        .eq('stadium_id', stadiumId);
+
+    if (startDate != null) {
+      query = query.gte('expense_date', AppDateUtil.formatDate(startDate));
+    }
+    if (endDate != null) {
+      query = query.lte('expense_date', AppDateUtil.formatDate(endDate));
+    }
+    if (type != null) {
+      query = query.eq('expense_type', type.value);
+    }
+
+    final rows = await query.order('expense_date', ascending: false);
 
     return rows.map(ExpanseModel.fromJson).toList();
   }
