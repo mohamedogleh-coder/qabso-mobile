@@ -3,11 +3,31 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../payments/payment_allocation_model.dart';
 import '../../../utill/app_date_util.dart';
 import 'expanse_model.dart';
+import 'expanse_receipt_model.dart';
 
 class ExpanseRepository {
   static final SupabaseClient _client = Supabase.instance.client;
 
   static const _expensesTable = 'expenses';
+  static const _receiptView = 'expense_receipt_view';
+
+  /// Reads one expense with everything a receipt shows — the transaction that
+  /// settled it, who paid it out, and every portion the money left in.
+  static Future<ExpanseReceiptModel> getExpanseReceipt({
+    required int expenseId,
+  }) async {
+    final row = await _client
+        .from(_receiptView)
+        .select()
+        .eq('id', expenseId)
+        .maybeSingle();
+
+    if (row == null) {
+      throw StateError('Expense $expenseId was not found.');
+    }
+
+    return ExpanseReceiptModel.fromJson(row);
+  }
 
   /// Reads the stadium's expenses, newest first.
   ///
@@ -94,6 +114,42 @@ class ExpanseRepository {
     );
 
     return expenseId as int;
+  }
+
+  /// Changes what an expense says about itself — its kind, its date, its
+  /// description — and nothing else.
+  ///
+  /// `expense_total` is deliberately left out. The amount is what the payment
+  /// was written for, so changing it here would leave the transaction saying
+  /// one figure and the expense another. Use [updateExpanse] to change the
+  /// amount, which rewrites the payment with it.
+  static Future<ExpanseModel> updateExpanseInfo({
+    required ExpanseModel expanse,
+  }) async {
+    final id = expanse.id;
+    if (id == null) {
+      throw ArgumentError.value(
+        expanse,
+        'expanse',
+        'An unsaved expense cannot be updated.',
+      );
+    }
+
+    final rows = await _client
+        .from(_expensesTable)
+        .update({
+          'expense_type': expanse.expanseType.value,
+          'description': expanse.description,
+          'expense_date': AppDateUtil.formatDate(expanse.expenseDate),
+        })
+        .eq('id', id)
+        .select();
+
+    if (rows.isEmpty) {
+      throw StateError('Expense $id was not found.');
+    }
+
+    return ExpanseModel.fromJson(rows.first);
   }
 
   /// Removes one expense.

@@ -9,7 +9,9 @@ import '../reports/widgets/report_based_widget.dart';
 import '../stadium/stadium_notifier_provider.dart';
 import 'expanse_card_widget.dart';
 import 'expanse_model.dart';
+import 'expanse_receipt_widget.dart';
 import 'expanse_repository.dart';
+import 'update_expanse_screen.dart';
 
 class ExpansesListScreen extends ConsumerStatefulWidget {
   const ExpansesListScreen({super.key});
@@ -87,6 +89,15 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: const Icon(Symbols.receipt_long),
+              title: const Text("Expense Receipt"),
+              subtitle: const Text("Eeg dhammaan faahfaahinta"),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _openReceipt(expanse);
+              },
+            ),
+            ListTile(
               leading: const Icon(Symbols.edit),
               title: const Text("Update Expense"),
               subtitle: const Text("Beddel kharashkan"),
@@ -119,8 +130,32 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
     );
   }
 
+  /// Shows the whole record of one expense — the payment, who paid it out, and
+  /// the numbers it left from.
+  Future<void> _openReceipt(ExpanseModel expanse) async {
+    final expenseId = expanse.id;
+    if (expenseId == null) return;
+
+    await showAppBottomSheet<void>(
+      context: context,
+      title: "Expense Receipt",
+      builder: (sheetContext) =>
+          SafeArea(child: ExpanseReceiptWidget(expenseId: expenseId)),
+    );
+  }
+
+  /// Opens the expense for editing, and reloads the list if anything was
+  /// saved.
   Future<void> _updateExpanse(ExpanseModel expanse) async {
-    await showNotImplementedDialog(context: context);
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => UpdateExpanseScreen(expanse: expanse),
+      ),
+    );
+
+    if (saved != true || !mounted) return;
+
+    _reload();
   }
 
   /// Asks first, then removes the expense and the payment recorded against it.
