@@ -11,11 +11,6 @@ import 'expanse_card_widget.dart';
 import 'expanse_model.dart';
 import 'expanse_repository.dart';
 
-/// The stadium's expenses for a chosen stretch of days, with what they came
-/// to.
-///
-/// The dates and the type both narrow the read itself, so the list on screen
-/// is exactly what the database returned.
 class ExpansesListScreen extends ConsumerStatefulWidget {
   const ExpansesListScreen({super.key});
 
@@ -27,7 +22,6 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
   late DateTimeRange selectedDateRange;
   late Future<List<ExpanseModel>> expansesFuture;
 
-  /// The kind being shown, or null for all of them.
   ExpanseType? selectedType;
 
   @override
@@ -84,11 +78,10 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
     });
   }
 
-  /// What a manager can do with one expense.
   Future<void> _openExpanseActions(ExpanseModel expanse) async {
     await showAppBottomSheet<void>(
       context: context,
-      title: "\$${expanse.expenseTotal.toStringAsFixed(2)}",
+      title: "Take action",
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -113,7 +106,7 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
                   color: Theme.of(sheetContext).colorScheme.error,
                 ),
               ),
-              subtitle: const Text("Ka saar kharashkan"),
+              subtitle: const Text("Masax Kharashaadkan"),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _deleteExpanse(expanse);
@@ -130,8 +123,30 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
     await showNotImplementedDialog(context: context);
   }
 
+  /// Asks first, then removes the expense and the payment recorded against it.
+  ///
+  /// The delete runs inside the dialog, so a slow tap cannot fire twice and a
+  /// failure leaves the dialog open with its message.
   Future<void> _deleteExpanse(ExpanseModel expanse) async {
-    await showNotImplementedDialog(context: context);
+    final expenseId = expanse.id;
+    if (expenseId == null) return;
+
+    final deleted = await showAppConfirmationDialog(
+      context: context,
+      title: "Delete Expense",
+      message:
+          "Ma hubtaa inaad masaxdo kharashkan? "
+          "Lacag bixintiisana way la baxaysaa.",
+      confirmText: "Delete",
+      isDestructive: true,
+      icon: Symbols.delete,
+      onConfirm: () => ExpanseRepository.deleteExpanse(expenseId: expenseId),
+    );
+
+    if (!deleted || !mounted) return;
+
+    showSuccessSnackBar(context: context, message: "Kharashka waa la masaxay.");
+    _reload();
   }
 
   @override

@@ -96,6 +96,26 @@ class ExpanseRepository {
     return expenseId as int;
   }
 
+  /// Removes one expense.
+  ///
+  /// The payment goes with it: `transactions.expense_id` points at the expense
+  /// with ON DELETE CASCADE, and the transaction's `transaction_details`
+  /// follow it, so nothing is left pointing at a row that is gone.
+  ///
+  /// The `.select()` turns a delete that matched nothing into an error, since
+  /// a delete matching no row is otherwise silently fine.
+  static Future<void> deleteExpanse({required int expenseId}) async {
+    final deletedRows = await _client
+        .from(_expensesTable)
+        .delete()
+        .eq('id', expenseId)
+        .select('id');
+
+    if (deletedRows.isEmpty) {
+      throw StateError('Expense $expenseId was not found.');
+    }
+  }
+
   static Map<String, dynamic> _expensePayload(ExpanseModel expanse) {
     return {
       'p_expense_type': expanse.expanseType.value,

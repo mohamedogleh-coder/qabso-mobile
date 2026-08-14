@@ -13,8 +13,6 @@ import '../stadium/stadium_notifier_provider.dart';
 import 'expanse_model.dart';
 import 'expanse_repository.dart';
 
-/// Registers one expense the stadium paid out, then collects the payment that
-/// covers it. Reached from the expenses screen.
 class AddExpanseScreen extends ConsumerStatefulWidget {
   const AddExpanseScreen({super.key});
 
@@ -72,7 +70,7 @@ class _AddExpanseScreenState extends ConsumerState<AddExpanseScreen> {
       context: context,
       requiredAmount: expense.expenseTotal,
       title: "Lacag bixinta kharashka",
-      confirmText: "Save",
+      confirmText: "Register",
       allowDiscount: false,
     );
 
@@ -121,7 +119,7 @@ class _AddExpanseScreenState extends ConsumerState<AddExpanseScreen> {
       return;
     }
 
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).pop();
   }
 
   void _clearForm() {
