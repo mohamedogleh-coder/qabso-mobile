@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../utill/app_constants.dart';
-
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
@@ -11,24 +9,14 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      backgroundColor: AppConstants.primary,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(_splashAsset, fit: BoxFit.cover),
-          const Align(
-            alignment: Alignment(0, 0.75),
-            child: SizedBox(
-              height: 26,
-              width: 26,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
+      body: Center(
+        child: SizedBox(
+          width: 80,
+          height: 80,
+          child: Image.asset('assets/app-icon-1024.png'),
+        ),
       ),
     );
+
   }
 }
