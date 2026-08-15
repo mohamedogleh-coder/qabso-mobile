@@ -27,14 +27,6 @@ final reportsList = [
     description: "Booking summery for every field",
   ),
 
-  ReportsModel(
-    iconData: Symbols.payments,
-    label: "Expanses Report",
-    backgroundColor: const Color(0xFFFFF1F2),
-    foregroundColor: const Color(0xFFE11D48),
-    path: AppConstants.expansesReport,
-    description: "Expanses list",
-  ),
 
   ReportsModel(
     iconData: Symbols.account_balance_wallet_sharp,

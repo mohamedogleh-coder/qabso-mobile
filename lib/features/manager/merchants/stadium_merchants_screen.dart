@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/merchants/merchant_notifier_provider.dart';
 import 'package:qabso_mobile/features/manager/merchants/merchant_provider_model.dart';
 import 'package:qabso_mobile/features/manager/merchants/stadium_merchant_model.dart';
+import 'package:qabso_mobile/utill/app_constants.dart';
 
 import '../../../utill/app_dailogs.dart';
 import '../../../utill/app_input_text_widget.dart';
@@ -59,8 +60,6 @@ class _StadiumMerchantsScreenState
     }
   }
 
-  /// A number that has taken money is kept, so it is turned off instead of
-  /// being removed. The same action turns it back on.
   Future<void> _toggleMerchantDisabled(StadiumMerchantModel merchant) async {
     final disable = !merchant.disabled;
     final action = disable ? "Disable" : "Enable";
@@ -204,15 +203,27 @@ class _StadiumMerchantsScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (merchants.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  "Merchant numberska maxaamiishu lacagta kusoo diri karaan",
-                  style: Theme.of(context).textTheme.labelMedium,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: AnimatedSwitcher(
+                duration: AppConstants.animationDuration,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SizeTransition(
+                    sizeFactor: animation,
+                    axisAlignment: -1,
+                    child: child,
+                  ),
                 ),
+                child: _hasNoActiveMerchant(merchants)
+                    ? _buildNoActiveMerchantWarning(
+                        merchants.isEmpty,
+                        key: ValueKey('warning-${merchants.isEmpty}'),
+                      )
+                    : _buildHeader(context, key: const ValueKey('header')),
               ),
-            const SizedBox(height: 12),
+            ),
+            const SizedBox(height: 20),
             if (merchants.isNotEmpty) ...[
               _buildNewCounterTitle("Registered", merchants.length),
               for (final merchant in merchants)
@@ -237,6 +248,139 @@ class _StadiumMerchantsScreenState
               _buildDraftCard(draft, providers, key: draft.key),
           ],
         ),
+      ),
+    );
+  }
+
+  bool _hasNoActiveMerchant(List<StadiumMerchantModel> merchants) =>
+      merchants.every((merchant) => merchant.disabled);
+
+  Widget _buildNoActiveMerchantWarning(bool hasNoMerchants, {Key? key}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      key: key,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Color.alphaBlend(
+          colorScheme.error.withValues(alpha: 0.10),
+          colorScheme.surface,
+        ),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Symbols.warning, fill: 1, size: 22, color: colorScheme.error),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Garoonkaaga lama tusayo macaamiisha",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hasNoMerchants
+                      ? "Ma jiro number lacagta lagugu soo diri karo, sidaas "
+                            "darteed macaamiishu kuma booki karaan. Ku dar "
+                            "mid si garoonkaagu u soo baxo."
+                      : "Dhammaan numberadaadu waa damisan yihiin, sidaas "
+                            "darteed macaamiishu kuma booki karaan. Mid shid "
+                            "si garoonkaagu u soo baxo.",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+   Widget _buildHeader(BuildContext context, {Key? key}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      key: key,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Color.alphaBlend(
+          colorScheme.primary.withValues(alpha: 0.10),
+          colorScheme.surface,
+        ),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.20)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 56,
+                width: 56,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(
+                  Symbols.account_balance_wallet,
+                  fill: 1,
+                  size: 30,
+                  color: colorScheme.onPrimary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Merchants", style: theme.textTheme.headlineLarge),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Kuwani waa numberada lacagta bookings ka lagugu soo diri doono insha Allah,"
+                      "Waana lanabarada aad ka diri karto kharashaadka garoonka",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Symbols.block, size: 18, color: colorScheme.error),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Number aad damiso lama tusi doono macaamiisha, lagumana bixin "
+                  "karo kharashaadka cusub. Balse wuu sii jiraa si reportska lacagihii hore ay u muuqdaan.",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
