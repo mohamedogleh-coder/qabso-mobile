@@ -208,6 +208,8 @@ class _UpdateExpanseScreenState extends ConsumerState<UpdateExpanseScreen> {
     final picked = await AppUtilityService.pickDate(
       context: context,
       initialDate: _expenseDate,
+      // The stadium paid nothing out before it existed.
+      firstDate: ref.read(stadiumFirstDateProvider),
       lastDate: DateTime.now(),
       helpText: "Taariikhda kharashka",
     );

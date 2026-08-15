@@ -54,8 +54,9 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
   Future<void> _pickDateRange() async {
     final range = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2026),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: ref.read(stadiumFirstDateProvider),
+      // Nothing has happened yet after today, so the range stops there.
+      lastDate: DateTime.now(),
       initialDateRange: selectedDateRange,
     );
 

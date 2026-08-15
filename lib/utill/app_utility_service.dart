@@ -85,7 +85,7 @@ abstract class AppUtilityService {
     bool use24HourFormat = true,
     TimePickerEntryMode initialEntryMode = TimePickerEntryMode.dial,
   }) {
-    return showTimePicker(
+     return showTimePicker(
       context: context,
       initialTime: initialTime ?? TimeOfDay.now(),
       helpText: helpText,

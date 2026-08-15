@@ -137,6 +137,8 @@ class _AddExpanseScreenState extends ConsumerState<AddExpanseScreen> {
       context: context,
       initialDate:
           DateTime.tryParse(_expenseDateController.text) ?? DateTime.now(),
+      // The stadium paid nothing out before it existed.
+      firstDate: ref.read(stadiumFirstDateProvider),
       lastDate: DateTime.now(),
       helpText: "Taariikhda kharashka",
     );
