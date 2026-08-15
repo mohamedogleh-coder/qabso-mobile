@@ -20,6 +20,7 @@ import 'features/manager/manager_shell.dart';
 import 'features/manager/merchants/stadium_merchants_screen.dart';
 import 'features/manager/stadium/stadium_settings_screen.dart';
 import 'features/manager/working_days/working_days_screen.dart';
+import 'features/splash/splash_screen.dart';
 import 'features/user/user_shell.dart';
 import 'utill/app_constants.dart';
 import 'utill/app_utility_service.dart';
@@ -86,8 +87,7 @@ class AuthGate extends ConsumerWidget {
       return const LoginScreen();
     }
     return appUserAsync.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const SplashScreen(),
       error: (error, _) => Scaffold(
         body: Center(
           child: Padding(

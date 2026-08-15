@@ -4,8 +4,8 @@ import '../../../utill/app_date_util.dart';
 /// check constraint allows them.
 enum ExpanseType {
   salary,
-  expense,
-  other;
+  expense;
+  // other;
 
   static ExpanseType fromString(String value) {
     return ExpanseType.values.firstWhere(

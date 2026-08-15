@@ -75,25 +75,32 @@ class AppUserNotifier extends AsyncNotifier<AppUserModel?> {
   }
 
   /// Updates editable profile fields through [AuthRepository] and syncs state.
+  ///
+  /// State is not moved to loading while the write runs. Everything watching
+  /// this provider is showing the signed-in user, and saving a profile must
+  /// not take the whole app back to a loading screen — the screen doing the
+  /// saving shows its own progress instead.
+  ///
+  /// A failure is thrown back to that screen rather than becoming the
+  /// provider's state, because a save that did not go through has not changed
+  /// who is signed in.
   Future<void> updateUserInfo({
     String? fullName,
     String? phoneNumber,
     File? avatarFile,
+    bool removeAvatar = false,
   }) async {
     final requestId = ++_requestId;
-    state = const AsyncLoading();
-    try {
-      final user = await _repository.updateUserInfo(
-        fullName: fullName,
-        phoneNumber: phoneNumber,
-        avatarFile: avatarFile,
-      );
-      if (requestId != _requestId) return;
-      state = AsyncData(user);
-    } catch (e, st) {
-      if (requestId != _requestId) return;
-      state = AsyncError(e, st);
-    }
+
+    final user = await _repository.updateUserInfo(
+      fullName: fullName,
+      phoneNumber: phoneNumber,
+      avatarFile: avatarFile,
+      removeAvatar: removeAvatar,
+    );
+
+    if (requestId != _requestId) return;
+    state = AsyncData(user);
   }
 
   /// Re-fetches the user and updates state.

@@ -277,7 +277,7 @@ class _AddExpanseScreenState extends ConsumerState<AddExpanseScreen> {
     return switch (type) {
       ExpanseType.salary => "Salary",
       ExpanseType.expense => "Expense",
-      ExpanseType.other => "Other",
+      // ExpanseType.other => "Other",
     };
   }
 }

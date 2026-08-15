@@ -11,19 +11,19 @@ extension ExpanseTypeStyle on ExpanseType {
   String get label => switch (this) {
     ExpanseType.salary => "Salary",
     ExpanseType.expense => "Expense",
-    ExpanseType.other => "Other",
+    // ExpanseType.other => "Other",
   };
 
   IconData get iconData => switch (this) {
     ExpanseType.salary => Symbols.badge,
     ExpanseType.expense => Symbols.shopping_cart,
-    ExpanseType.other => Symbols.more_horiz,
+    // ExpanseType.other => Symbols.more_horiz,
   };
 
   Color get color => switch (this) {
     ExpanseType.salary => AppConstants.tertiary,
     ExpanseType.expense => AppConstants.error,
-    ExpanseType.other => AppConstants.warning,
+    // ExpanseType.other => AppConstants.warning,
   };
 }
 

@@ -97,11 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Symbols.handshake,
-                    size: 56,
-                    color: colorScheme.primary,
-                  ),
+                  Icon(Symbols.handshake, size: 56, color: colorScheme.primary),
                   const SizedBox(height: 16),
                   Text(
                     'Welcome back',
@@ -188,9 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           'or continue with',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
                       ),
                       Expanded(
@@ -207,10 +201,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: _isSubmitting ? null : _loginWithFacebook,
-                    icon: const Icon(
-                      Icons.facebook,
-                      color: Color(0xFF1877F2),
-                    ),
+                    icon: const Icon(Icons.facebook, color: Color(0xFF1877F2)),
                     label: const Text('Continue with Facebook'),
                   ),
                 ],

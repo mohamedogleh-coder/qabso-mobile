@@ -78,7 +78,6 @@ final managerMenuList = [
   ),
 ];
 
-
 final userMenuList = [
   MenuItemsModel(
     iconData: Symbols.search,

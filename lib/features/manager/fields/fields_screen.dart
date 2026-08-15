@@ -24,16 +24,17 @@ class _FieldsScreenState extends ConsumerState<FieldsScreen> {
       appBar: AppBar(
         title: Text("Fields"),
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddNewFieldScreen()),
-              );
-            },
-            icon: Icon(Symbols.add),
-            label: Text("Add new field"),
-          ),
+          if (!fieldsAsync.isLoading && fieldsAsync.hasValue)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddNewFieldScreen()),
+                );
+              },
+              icon: Icon(Symbols.add),
+              label: Text("Add new field"),
+            ),
         ],
       ),
       body: Padding(

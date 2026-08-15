@@ -51,7 +51,7 @@ class AppUserModel {
       'id': id,
       'full_name': fullName,
       'phone_number': phoneNumber,
-      'profile':profile,
+      'profile': profile,
       'role': role.toJson(),
     };
   }

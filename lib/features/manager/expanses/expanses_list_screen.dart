@@ -251,10 +251,26 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
   }
 
   Widget _buildTypeChip({required String label, required ExpanseType? type}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isSelected = selectedType == type;
+
     return ChoiceChip(
-      label: Text(label),
-      avatar: type == null ? null : Icon(type.iconData, size: 18),
-      selected: selectedType == type,
+      selected: isSelected,
+      backgroundColor: Colors.transparent,
+      selectedColor: colorScheme.primary,
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+        ),
+      ),
+      avatar: type == null
+          ? null
+          : Icon(
+              type.iconData,
+              size: 18,
+              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+            ),
       onSelected: (_) => _selectType(type),
     );
   }

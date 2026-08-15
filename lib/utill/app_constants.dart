@@ -34,7 +34,7 @@ abstract class AppConstants {
 
   static const Duration animationDuration = Duration(milliseconds: 300);
 
-  static const String appName = 'Playground';
+  static const String appName = 'Qabso';
   static const String appVersion = 'V1.0';
 
   static const String splash = '/';

@@ -55,6 +55,21 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Generates the launcher icons for every platform from one source image.
+# Re-run with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/app-icon-1024.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  # The logo is white on green, so the platforms that draw their own
+  # background behind it are given the brand green to draw.
+  adaptive_icon_background: "#388E3C"
+  adaptive_icon_foreground: "assets/app-icon-1024.png"
+  macos:
+    generate: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

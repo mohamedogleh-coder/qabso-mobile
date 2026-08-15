@@ -23,9 +23,6 @@ abstract class SupabaseStorageService {
     return getPublicUrl(path);
   }
 
-  /// Replaces the existing file at [path] with [file]. Returns the resulting
-  /// public URL, cache-busted so clients don't keep serving the old file
-  /// that used to live at the same path.
   static Future<String> updateFile({
     required String path,
     required File file,
@@ -34,14 +31,10 @@ abstract class SupabaseStorageService {
     return getPublicUrl(path, bustCache: true);
   }
 
-  /// Deletes the file at [path], if it exists.
-  static Future<void> deleteFile(String path) async {
+   static Future<void> deleteFile(String path) async {
     await _files.remove([path]);
   }
 
-  /// Returns the public URL for [path]. Pass [bustCache] to force clients to
-  /// bypass any CDN-cached copy — useful right after replacing a file that
-  /// keeps the same path.
   static String getPublicUrl(String path, {bool bustCache = false}) {
     return _files.getPublicUrl(
       path,

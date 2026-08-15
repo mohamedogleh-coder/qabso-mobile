@@ -83,10 +83,6 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
     return;
   }
 
-  /// One team paid its half and the other half is still owed.
-  ///
-  /// A private event needs its code first, so it opens the code widget. A
-  /// public event is open to anyone, so we go straight to the payment.
   Future<void> _handlePendingEvent() async {
     final eventId = _slot.eventId;
 
@@ -108,8 +104,6 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
     return;
   }
 
-  /// The slot is paid in full. Cancelling or moving it is not built yet, so
-  /// that flow goes here later.
   Future<void> _handleConfirmedEvent() {
     return showNotImplementedDialog(
       context: context,
@@ -117,10 +111,6 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
     );
   }
 
-  /// Takes the half a public event still owes.
-  ///
-  /// The event is loaded first because it is the only place that knows how
-  /// much is left to pay. That amount is what the payment sheet asks for.
   Future<void> _payRemainingHalf(int eventId) async {
     HalfBookedEventModel event;
 
