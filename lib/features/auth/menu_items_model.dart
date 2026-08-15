@@ -96,8 +96,8 @@ final userMenuList = [
   ),
 
   MenuItemsModel(
-    iconData: Symbols.group,
-    label: "Teams",
+    iconData: Symbols.event,
+    label: "History",
     backgroundColor: const Color(0xFFF3E5F5),
     foregroundColor: const Color(0xFF8E24AA),
     path: AppConstants.events,

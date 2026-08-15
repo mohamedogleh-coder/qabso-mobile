@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qabso_mobile/features/user/explore/widgets/explore_search_stadiums_widget.dart';
 
 import '../../../utill/app_brand_widget.dart';
 import '../../../utill/app_dailogs.dart';
@@ -31,6 +32,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ],
       ),
+      body: Column(children: [ExploreSearchStadiumsWidget()],),
     );
   }
 }
