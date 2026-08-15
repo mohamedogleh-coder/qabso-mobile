@@ -23,12 +23,6 @@ class FieldCardWidget extends ConsumerStatefulWidget {
 class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
   bool expanded = false;
 
-  /// The one place on the manager's side that reads the stadium.
-  ///
-  /// The events widgets below take what they need as a
-  /// [BookingContextModel], so the customer's screens can mount the very same
-  /// list with a context built from whatever they were given — no stadium
-  /// provider required down there.
   Widget _buildTimeSlots() {
     final stadiumAsync = ref.watch(stadiumNotifierProvider);
 
@@ -66,8 +60,6 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
     );
   }
 
-  /// Says the field is shut to booking, right beside its name, so a manager
-  /// scanning the list sees it without opening anything.
   Widget _buildClosedChip() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -121,8 +113,6 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        // A field that takes no bookings is greyed the way a
-                        // disabled merchant number is.
                         color: widget.model.allowBooking
                             ? colorScheme.primary
                             : colorScheme.outline,

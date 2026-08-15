@@ -28,9 +28,6 @@ class AppDateUtil {
     return '$hour:$minute $period';
   }
 
-  /// Renders [time] as zero-padded 24-hour `HH:mm` — the form stored in
-  /// Postgres `time` columns, unlike the 12-hour
-  /// [formatTimeOfTheDayTime] used for display.
   static String formatTimeOfDay(TimeOfDay time) {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');

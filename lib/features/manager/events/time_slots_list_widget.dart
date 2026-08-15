@@ -157,8 +157,6 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
     );
   }
 
-  /// One key on the legend. [gradient] is for a slot painted in two colours;
-  /// a plain slot passes [color].
   Widget _buildIndicator({
     Color? color,
     Gradient? gradient,

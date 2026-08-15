@@ -7,12 +7,20 @@ class FieldModel extends Equatable {
   final bool allowBooking;
   final List<String> fieldImages;
 
+  /// The day the field was registered, and the last time it was changed. Both
+  /// are set by the database, so they are null on a field that has not been
+  /// saved yet.
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
   const FieldModel({
     this.id,
     required this.capacity,
     required this.cost,
     this.allowBooking = true,
     this.fieldImages = const [],
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory FieldModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +32,14 @@ class FieldModel extends Equatable {
       fieldImages: json['field_images'] != null
           ? List<String>.from(json['field_images'] as List)
           : [],
+      // Both are timestamptz, so they arrive with an offset and are moved to
+      // the phone's own time.
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'].toString()).toLocal(),
+      updatedAt: json['updated_at'] == null
+          ? null
+          : DateTime.parse(json['updated_at'].toString()).toLocal(),
     );
   }
 
@@ -42,6 +58,8 @@ class FieldModel extends Equatable {
     double? cost,
     bool? allowBooking,
     List<String>? fieldImages,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return FieldModel(
       id: id ?? this.id,
@@ -49,9 +67,19 @@ class FieldModel extends Equatable {
       cost: cost ?? this.cost,
       allowBooking: allowBooking ?? this.allowBooking,
       fieldImages: fieldImages ?? this.fieldImages,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   @override
-  List<Object?> get props => [id, capacity, cost, allowBooking, fieldImages];
+  List<Object?> get props => [
+    id,
+    capacity,
+    cost,
+    allowBooking,
+    fieldImages,
+    createdAt,
+    updatedAt,
+  ];
 }

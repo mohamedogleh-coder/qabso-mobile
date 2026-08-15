@@ -85,7 +85,7 @@ abstract class AppUtilityService {
     bool use24HourFormat = true,
     TimePickerEntryMode initialEntryMode = TimePickerEntryMode.dial,
   }) {
-     return showTimePicker(
+    return showTimePicker(
       context: context,
       initialTime: initialTime ?? TimeOfDay.now(),
       helpText: helpText,
@@ -98,9 +98,6 @@ abstract class AppUtilityService {
     );
   }
 
-  /// Shows the app's date picker and resolves with the picked date, or
-  /// `null` if the user cancelled. [firstDate] and [lastDate] default to a
-  /// five-year window either side of today.
   static Future<DateTime?> pickDate({
     required BuildContext context,
     DateTime? initialDate,

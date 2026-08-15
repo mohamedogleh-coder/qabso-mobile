@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
-import '../auth/app_user_model.dart';
-import '../auth/app_user_notifer.dart';
 import '../../utill/app_bottom_navigation.dart';
 import '../auth/menu_items_model.dart';
+import 'explore/explore_screen.dart';
+import 'favourites/fav_stadiums_screen.dart';
+import 'settings/user_settings_screen.dart';
+import 'teams/teams_screen.dart';
+
+final selectedIndexProvider = StateProvider<int>((ref) => 0);
 
 class UserShell extends ConsumerStatefulWidget {
   const UserShell({super.key});
@@ -16,29 +19,25 @@ class UserShell extends ConsumerStatefulWidget {
 }
 
 class _UserShellState extends ConsumerState<UserShell> {
-  int _selectedIndex = 0;
+  static const _screens = [
+    ExploreScreen(),
+    FavStadiumsScreen(),
+    TeamsScreen(),
+    UserSettingsScreen(),
+  ];
+
 
   @override
   Widget build(BuildContext context) {
-    final appUser = ref.watch(appUserNotifierProvider).value;
-    final items = menuItemsByRole[AppUserRole.user]!;
+    final selectedIndex = ref.watch(selectedIndexProvider);
+    final selectedIndexNotifier = ref.read(selectedIndexProvider.notifier);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(items[_selectedIndex].label),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              await Supabase.instance.client.auth.signOut();
-            },
-            icon: Icon(Symbols.exit_to_app),
-          ),
-        ],
-      ),
-      body: Text(items[_selectedIndex].label),
+      body: IndexedStack(index: selectedIndex, children: _screens),
       bottomNavigationBar: AppBottomNavigation(
-        items: items,
-        selectedIndex: _selectedIndex,
-        onItemSelected: (index) => setState(() => _selectedIndex = index),
+        items: userMenuList,
+        selectedIndex: selectedIndex,
+        onItemSelected: (index) =>
+            setState(() => selectedIndexNotifier.state = index),
       ),
     );
   }
