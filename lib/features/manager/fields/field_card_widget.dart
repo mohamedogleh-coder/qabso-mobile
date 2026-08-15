@@ -66,6 +66,35 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
     );
   }
 
+  /// Says the field is shut to booking, right beside its name, so a manager
+  /// scanning the list sees it without opening anything.
+  Widget _buildClosedChip() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: colorScheme.error.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Symbols.block, size: 14, color: colorScheme.error),
+          const SizedBox(width: 4),
+          Text(
+            "Closed",
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: colorScheme.error,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -92,7 +121,11 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary,
+                        // A field that takes no bookings is greyed the way a
+                        // disabled merchant number is.
+                        color: widget.model.allowBooking
+                            ? colorScheme.primary
+                            : colorScheme.outline,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -108,12 +141,20 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
                           Row(
                             mainAxisAlignment: .spaceBetween,
                             children: [
-                              Text(
-                                "Field #${widget.model.id}",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              Row(
+                                children: [
+                                  Text(
+                                    "Field #${widget.model.id}",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  if (!widget.model.allowBooking) ...[
+                                    const SizedBox(width: 8),
+                                    _buildClosedChip(),
+                                  ],
+                                ],
                               ),
                               Text(
                                 '\$${widget.model.cost}',
