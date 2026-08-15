@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/working_days/working_days.dart';
 import 'package:qabso_mobile/features/manager/working_days/working_days_notifier_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../utill/app_dailogs.dart';
 import '../../../utill/app_date_util.dart';
@@ -136,7 +137,12 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => isSubmitting = false);
-      showErrorSnackBar(context: context, message: e.toString());
+
+      await showAppErrorDialog(
+        context: context,
+        title: "Maalmaha lama keydin",
+        message: e is PostgrestException ? e.message : e.toString(),
+      );
     }
   }
 
