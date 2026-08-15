@@ -186,31 +186,64 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
     );
   }
 
+  /// How a slot is painted, in one place.
+  ///
+  /// A free hour and a fully paid one each get a single colour. A half booked
+  /// hour gets both: the taken half in the booked colour and the free half in
+  /// the available colour, split down the middle, so a glance says how much of
+  /// the hour is still there to sell.
+  BoxDecoration _buildDecoration(ThemeData theme) {
+    final booked = theme.colorScheme.primary.withValues(alpha: 0.5);
+    final free = theme.colorScheme.surfaceContainerHighest;
+
+    if (_isPastAndFree) {
+      return _slotDecoration(
+        color: free.withValues(alpha: 0.4),
+        border: theme.dividerColor.withValues(alpha: 0.4),
+      );
+    }
+
+    if (_slot.isAvailable) {
+      return _slotDecoration(color: free, border: theme.dividerColor);
+    }
+
+    if (_slot.eventStatus == EventStatus.pending) {
+      return _slotDecoration(
+        border: booked,
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [booked, booked, free, free],
+          stops: const [0, 0.54, 0.54, 1],
+        ),
+      );
+    }
+
+    return _slotDecoration(color: booked, border: booked);
+  }
+
+  BoxDecoration _slotDecoration({
+    Color? color,
+    Gradient? gradient,
+    required Color border,
+  }) {
+    return BoxDecoration(
+      color: color,
+      gradient: gradient,
+      borderRadius: BorderRadius.circular(4),
+      border: Border.all(color: border),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     final isPastAndFree = _isPastAndFree;
 
-    final background = isPastAndFree
-        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
-        : (widget.slotModel.isAvailable
-              ? Theme.of(context).colorScheme.surfaceContainerHighest
-              : (widget.slotModel.eventStatus == EventStatus.pending
-                    ? theme.colorScheme.tertiary.withValues(alpha: 0.3)
-                    : theme.colorScheme.primary.withValues(alpha: 0.5)));
-
     final foreground = isPastAndFree
         ? theme.disabledColor
         : theme.colorScheme.onSurface;
-
-    final borderColor = isPastAndFree
-        ? theme.dividerColor.withValues(alpha: 0.4)
-        : (widget.slotModel.isAvailable
-              ? Theme.of(context).dividerColor
-              : (widget.slotModel.eventStatus == EventStatus.pending
-                    ? theme.colorScheme.tertiary.withValues(alpha: 0.3)
-                    : theme.colorScheme.primary.withValues(alpha: 0.5)));
 
     return badges.Badge(
       position: badges.BadgePosition.topStart(top: -4, start: -2),
@@ -234,11 +267,7 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
           onTap: isBooking || isPastAndFree ? null : onTapHandler,
           child: Container(
             padding: const EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: borderColor),
-            ),
+            decoration: _buildDecoration(theme),
             child: Text(
               widget.slotModel.label,
               style: Theme.of(context).textTheme.bodySmall!.copyWith(

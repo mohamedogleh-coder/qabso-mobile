@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/event_notifier_provider.dart';
+import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slot_card_widget.dart';
 import 'package:qabso_mobile/utill/app_utility_service.dart';
 import 'package:qabso_mobile/utill/error_widget.dart';
@@ -17,11 +17,6 @@ final selectedDateProvider = StateProvider.autoDispose<DateTime>((ref) {
   return DateTime(now.year, now.month, now.day);
 });
 
-/// One field's day of slots.
-///
-/// Takes everything it needs as a [BookingContextModel] rather than reading a
-/// provider, so a manager's field card and a customer's stadium screen can
-/// both mount it.
 class TimeSlotsListWidget extends ConsumerStatefulWidget {
   final BookingContextModel booking;
 
@@ -50,17 +45,25 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
           children: [
             _buildIndicator(
               title: "Available",
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: theme.colorScheme.surfaceContainerHighest,
             ),
             _buildIndicator(
               title: "Half Booked",
-              color: theme.colorScheme.tertiary.withValues(alpha: 0.3),
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  theme.colorScheme.primary.withValues(alpha: 0.5),
+                  theme.colorScheme.primary.withValues(alpha: 0.5),
+                  theme.colorScheme.surfaceContainerHighest,
+                  theme.colorScheme.surfaceContainerHighest,
+                ],
+                stops: const [0, 0.54, 0.54, 1],
+              ),
             ),
             _buildIndicator(
               title: "Booked",
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.3),
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
           ],
         ),
@@ -154,7 +157,13 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
     );
   }
 
-  Widget _buildIndicator({Color? color, required String title}) {
+  /// One key on the legend. [gradient] is for a slot painted in two colours;
+  /// a plain slot passes [color].
+  Widget _buildIndicator({
+    Color? color,
+    Gradient? gradient,
+    required String title,
+  }) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -163,6 +172,7 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
             padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: color,
+              gradient: gradient,
               shape: BoxShape.rectangle,
               border: Border.all(
                 width: 1,
