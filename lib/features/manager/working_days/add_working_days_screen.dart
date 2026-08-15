@@ -44,8 +44,7 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
 
   bool get _hasOpenDay => _days.any((day) => day.isOpen);
 
-  bool get _isValid =>
-      _hasOpenDay && _days.every((day) => _errorFor(day) == null);
+  bool get _isValid => _days.every((day) => _errorFor(day) == null);
 
   String? _errorFor(WorkingDayModel day) {
     if (!day.isOpen) return null;
@@ -112,13 +111,6 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
   Future<void> _handleSubmit() async {
     if (isSubmitting) return;
 
-    if (!_hasOpenDay) {
-      showErrorSnackBar(
-        context: context,
-        message: "Open at least one day of the week.",
-      );
-      return;
-    }
     if (!_isValid) {
       showErrorSnackBar(
         context: context,
@@ -167,19 +159,21 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 8),
-              for (final day in _days) ...[
-                _buildDayCard(day),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
                 const SizedBox(height: 8),
+                for (final day in _days) ...[
+                  _buildDayCard(day),
+                  const SizedBox(height: 8),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -210,11 +204,14 @@ class _AddWorkingDaysScreenState extends ConsumerState<AddWorkingDaysScreen> {
               ),
             ],
           ),
+          // Closing every day is a choice, not a mistake, so this says what it
+          // means rather than refusing to save.
           if (!_hasOpenDay)
             Text(
-              "Open at least one day of the week.",
+              "Maalmaha oo dhan waa xiran yihiin — booking lagama sameyn "
+              "karo inta ay sidaas tahay.",
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.error,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
         ],
