@@ -234,44 +234,66 @@ class _ExpansesListScreenState extends ConsumerState<ExpansesListScreen> {
     );
   }
 
+  /// The kinds an expense can be, with "All" in front of them.
+  ///
+  /// A Wrap rather than a scrolling row: on a phone the chips move to a second
+  /// line when they do not fit, and on a wide window they simply sit side by
+  /// side, so none of them is ever hidden off the edge.
   Widget _buildTypeFilter() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
           _buildTypeChip(label: "All", type: null),
-          for (final type in ExpanseType.values) ...[
-            const SizedBox(width: 8),
+          for (final type in ExpanseType.values)
             _buildTypeChip(label: type.label, type: type),
-          ],
         ],
       ),
     );
   }
 
+  /// Selected reads as a solid primary pill; unselected as a quiet outline.
+  /// An unselected chip keeps its kind's own colour on the icon, which is what
+  /// makes the row scannable at a glance.
   Widget _buildTypeChip({required String label, required ExpanseType? type}) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isSelected = selectedType == type;
+
+    final foreground = isSelected
+        ? colorScheme.onPrimary
+        : colorScheme.onSurfaceVariant;
 
     return ChoiceChip(
       selected: isSelected,
+      onSelected: (_) => _selectType(type),
+      showCheckmark: false,
       backgroundColor: Colors.transparent,
       selectedColor: colorScheme.primary,
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-        ),
+      side: BorderSide(
+        color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
       ),
+      shape: const StadiumBorder(),
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      labelPadding: const EdgeInsets.only(left: 4, right: 2),
       avatar: type == null
           ? null
           : Icon(
               type.iconData,
               size: 18,
-              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+              fill: isSelected ? 1 : 0,
+              color: isSelected ? colorScheme.onPrimary : type.color,
             ),
-      onSelected: (_) => _selectType(type),
+      label: Text(
+        label,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: foreground,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+        ),
+      ),
     );
   }
 

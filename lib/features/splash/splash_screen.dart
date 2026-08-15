@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../utill/app_constants.dart';
 
-/// The Qabso splash, shown while the app works out who is signed in.
-///
-/// The artwork is full bleed. Its background is the brand green, which the
-/// scaffold is painted in too, so a screen shaped differently from the image
-/// shows more green rather than bars down the sides.
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
@@ -15,6 +10,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       backgroundColor: AppConstants.primary,
       body: Stack(
         fit: StackFit.expand,
