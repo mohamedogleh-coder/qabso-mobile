@@ -45,8 +45,9 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
 
   TimeSlotModel get _slot => widget.slotModel;
 
-  /// Reads which state the slot is in and hands over to the handler for it.
-  /// All the work is in those three methods.
+  bool get _isPastAndFree =>
+      _slot.isAvailable && _slot.startTime.isBefore(DateTime.now());
+
   Future<void> onTapHandler() async {
     if (isBooking) return;
 
@@ -59,8 +60,6 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
         await _handlePendingEvent();
         return;
 
-      // A cancelled event is never shown in the grid, so it is handled like a
-      // confirmed one.
       case EventStatus.confirmed:
       case EventStatus.canceled:
         await _handleConfirmedEvent();
@@ -191,23 +190,27 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final background = widget.slotModel.isAvailable
-        ? Theme.of(context).colorScheme.surfaceContainerHighest
-        : (widget.slotModel.eventStatus == EventStatus.pending
-              ? theme.colorScheme.tertiary.withValues(alpha: 0.3)
-              : theme.colorScheme.primary.withValues(alpha: 0.5));
+    final isPastAndFree = _isPastAndFree;
 
-    final foreground = widget.slotModel.isAvailable
-        ? theme.colorScheme.onSurface
-        : (widget.slotModel.eventStatus == EventStatus.pending
-              ? theme.colorScheme.onSurface
-              : theme.colorScheme.onSurface);
+    final background = isPastAndFree
+        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+        : (widget.slotModel.isAvailable
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : (widget.slotModel.eventStatus == EventStatus.pending
+                    ? theme.colorScheme.tertiary.withValues(alpha: 0.3)
+                    : theme.colorScheme.primary.withValues(alpha: 0.5)));
 
-    final borderColor = widget.slotModel.isAvailable
-        ? Theme.of(context).dividerColor
-        : (widget.slotModel.eventStatus == EventStatus.pending
-              ? theme.colorScheme.tertiary.withValues(alpha: 0.3)
-              : theme.colorScheme.primary.withValues(alpha: 0.5));
+    final foreground = isPastAndFree
+        ? theme.disabledColor
+        : theme.colorScheme.onSurface;
+
+    final borderColor = isPastAndFree
+        ? theme.dividerColor.withValues(alpha: 0.4)
+        : (widget.slotModel.isAvailable
+              ? Theme.of(context).dividerColor
+              : (widget.slotModel.eventStatus == EventStatus.pending
+                    ? theme.colorScheme.tertiary.withValues(alpha: 0.3)
+                    : theme.colorScheme.primary.withValues(alpha: 0.5)));
 
     return badges.Badge(
       position: badges.BadgePosition.topStart(top: -4, start: -2),
@@ -228,7 +231,7 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
       child: Card(
         elevation: 0,
         child: InkWell(
-          onTap: isBooking ? null : onTapHandler,
+          onTap: isBooking || isPastAndFree ? null : onTapHandler,
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
