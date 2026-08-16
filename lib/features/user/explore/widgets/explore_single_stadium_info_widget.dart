@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/user/explore/models/explored_stadium_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../utill/app_dailogs.dart';
 import '../../../../utill/app_date_util.dart';
+import '../../../../utill/current_position_provider.dart';
 import '../../../../utill/error_widget.dart';
 import '../../../../utill/loading_widget.dart';
 import '../../../manager/events/models/booking_context_model.dart';
@@ -180,18 +182,38 @@ class _ExploreSingleStadiumInfoWidgetState
     );
   }
 
+  /// How far the stadium is. The search measures it itself when the customer
+  /// searched from their position; otherwise it is worked out from where the
+  /// phone is now. Neither one available leaves it unknown.
+  String get _distance {
+    final searched = _stadium.distance;
+    if (searched != null) return "$searched km";
+
+    final position = ref.watch(currentPositionProvider).value;
+    final latitude = _stadium.latitude;
+    final longitude = _stadium.longitude;
+
+    if (position == null || latitude == null || longitude == null) {
+      return "Unknown";
+    }
+
+    final metres = Geolocator.distanceBetween(
+      position.latitude,
+      position.longitude,
+      latitude,
+      longitude,
+    );
+
+    return "${(metres / 1000).toStringAsFixed(1)} km";
+  }
+
   /// What the stadium itself offers, as one strip. The facts share the width
   /// evenly, so the strip fits any phone without wrapping.
   Widget _buildStadiumInfo() {
     final stadium = _stadium;
 
     return _buildStatStrip([
-      if (stadium.distance != null)
-        _buildStat(
-          icon: Symbols.near_me,
-          label: "Away",
-          value: "${stadium.distance} km",
-        ),
+      _buildStat(icon: Symbols.near_me, label: "Away", value: _distance),
       _buildStat(
         icon: Symbols.sports,
         label: "Extra time",

@@ -4,8 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../utill/app_dailogs.dart';
+import '../../../utill/current_position_provider.dart';
 import '../../manager/stadium/stadium_model.dart';
-import 'current_position_provider.dart';
 import 'favourite_notifier_provider.dart';
 
 /// One saved stadium, with the heart that takes it off the list.
