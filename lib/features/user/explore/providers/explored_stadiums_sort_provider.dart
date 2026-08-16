@@ -9,18 +9,19 @@ import 'explored_stadiums_notifier.dart';
 enum ExploredStadiumsSort {
   nearest,
   cheapest,
-  biggest;
-
+  biggest,
+  extraTime;
   String get label => switch (this) {
     ExploredStadiumsSort.nearest => "Nearest",
     ExploredStadiumsSort.cheapest => "Lowest cost",
     ExploredStadiumsSort.biggest => "Biggest field",
+    ExploredStadiumsSort.extraTime => "Most extra time",
   };
-
   IconData get iconData => switch (this) {
     ExploredStadiumsSort.nearest => Symbols.near_me,
     ExploredStadiumsSort.cheapest => Symbols.payments,
     ExploredStadiumsSort.biggest => Symbols.group,
+    ExploredStadiumsSort.extraTime => Symbols.sports,
   };
 }
 
@@ -50,6 +51,10 @@ final sortedExploredStadiumsProvider =
             );
           case ExploredStadiumsSort.biggest:
             sorted.sort((a, b) => b.capacity.compareTo(a.capacity));
+          case ExploredStadiumsSort.extraTime:
+            // The longest extra time first, because that is more play for the
+            // same hour.
+            sorted.sort((a, b) => b.extraTime.compareTo(a.extraTime));
         }
 
         return sorted;

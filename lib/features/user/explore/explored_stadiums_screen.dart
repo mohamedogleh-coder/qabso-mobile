@@ -1,47 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:qabso_mobile/features/user/explore/widgets/explored_sstadium_card_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../utill/app_dailogs.dart';
 import '../../../utill/error_widget.dart';
 import '../../../utill/loading_widget.dart';
-import 'models/explored_stadium_model.dart';
 import 'providers/explored_stadiums_notifier.dart';
 import 'providers/explored_stadiums_sort_provider.dart';
 
-/// The stadiums the search found, shown after the user taps "Raadi".
-///
-/// The search itself stays on the previous screen. This one only reads what
-/// the filter already asked for, and lets the user put the results in the
-/// order they want.
 class ExploredStadiumsScreen extends ConsumerWidget {
   const ExploredStadiumsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stadiumsAsync = ref.watch(sortedExploredStadiumsProvider);
+    final sort = ref.watch(exploredStadiumsSortProvider);
 
     return Scaffold(
-      appBar: AppBar(titleSpacing: 20, title: const Text("Stadiums found")),
+      appBar: AppBar(
+        title: Text(
+          stadiumsAsync.hasValue && !stadiumsAsync.isLoading
+              ? '${stadiumsAsync.value!.length} Explored'
+              : 'Explored',
+        ),
+        actions: [
+          if (stadiumsAsync.hasValue && !stadiumsAsync.isLoading)
+            _buildSortButton(context, ref, sort),
+        ],
+      ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: stadiumsAsync.when(
-              skipLoadingOnRefresh: false,
-              data: (stadiums) => stadiums.isEmpty
-                  ? _buildEmpty(context)
-                  : _buildResults(context, ref, stadiums),
-              error: (error, stackTrace) => ErrorRetryWidget(
-                errorMessage: error is PostgrestException
-                    ? error.message
-                    : error.toString(),
-                onRetry: () => ref
-                    .read(exploredStadiumsNotifierProvider.notifier)
-                    .refresh(),
+        child: Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: stadiumsAsync.when(
+                skipLoadingOnRefresh: false,
+                data: (stadiums) => stadiums.isEmpty
+                    ? _buildEmpty(context)
+                    : ListView.builder(
+                        itemCount: stadiums.length,
+                        shrinkWrap: true,
+                        itemBuilder: (context, index) =>
+                            ExploredStadiumCardWidget(
+                              stadiumModel: stadiums[index],
+                            ),
+                      ),
+                error: (error, stackTrace) => ErrorRetryWidget(
+                  errorMessage: error is PostgrestException
+                      ? error.message
+                      : error.toString(),
+                  onRetry: () => ref
+                      .read(exploredStadiumsNotifierProvider.notifier)
+                      .refresh(),
+                ),
+                loading: () => const LoadingWidget(),
               ),
-              loading: () => const LoadingWidget(),
             ),
           ),
         ),
@@ -49,64 +65,43 @@ class ExploredStadiumsScreen extends ConsumerWidget {
     );
   }
 
-  /// How many stadiums were found, and the button that opens the sort sheet.
-  Widget _buildResults(
+  Widget _buildSortButton(
     BuildContext context,
     WidgetRef ref,
-    List<ExploredStadiumModel> stadiums,
+    ExploredStadiumsSort sort,
   ) {
-    return Column(
-      children: [
-        _buildSortBar(context, ref, stadiums.length),
-        const Divider(height: 1),
-        Expanded(child: _buildList(context, ref, stadiums)),
-      ],
-    );
-  }
-
-  Widget _buildSortBar(BuildContext context, WidgetRef ref, int found) {
     final theme = Theme.of(context);
-    final sort = ref.watch(exploredStadiumsSortProvider);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return OutlinedButton.icon(
+      onPressed: () => _openSortSheet(context, ref),
+      icon: Icon(sort.iconData, size: 18, fill: 1),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(
-            child: Text(
-              found == 1 ? "1 stadium found" : "$found stadiums found",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          TextButton.icon(
-            onPressed: () => _openSortSheet(context, ref),
-            icon: Icon(sort.iconData, size: 18),
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(sort.label),
-                const Icon(Symbols.arrow_drop_down, size: 20),
-              ],
-            ),
-          ),
+          Text(sort.label),
+          const Icon(Symbols.arrow_drop_down, size: 20),
         ],
+      ),
+      style: OutlinedButton.styleFrom(
+        shape: const StadiumBorder(),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+        foregroundColor: theme.colorScheme.onSurface,
+        textStyle: theme.textTheme.bodySmall,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        iconColor: theme.colorScheme.primary,
       ),
     );
   }
 
   Future<void> _openSortSheet(BuildContext context, WidgetRef ref) async {
     final current = ref.read(exploredStadiumsSortProvider);
-
     final picked = await showAppBottomSheet<ExploredStadiumsSort>(
       context: context,
       title: "Sort by",
       builder: (sheetContext) {
         final theme = Theme.of(sheetContext);
-
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -143,46 +138,6 @@ class ExploredStadiumsScreen extends ConsumerWidget {
     ref.read(exploredStadiumsSortProvider.notifier).state = picked;
   }
 
-  Widget _buildList(
-    BuildContext context,
-    WidgetRef ref,
-    List<ExploredStadiumModel> stadiums,
-  ) {
-    return RefreshIndicator(
-      onRefresh: () =>
-          ref.read(exploredStadiumsNotifierProvider.notifier).refresh(),
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
-        itemCount: stadiums.length,
-        itemBuilder: (context, index) =>
-            _buildStadiumCard(context, stadiums[index]),
-      ),
-    );
-  }
-
-  /// The card the stadium will live in. It carries the name only, because the
-  /// stadium card itself is still to be built.
-  Widget _buildStadiumCard(BuildContext context, ExploredStadiumModel stadium) {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          stadium.stadiumName,
-          style: theme.textTheme.headlineMedium,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-
   Widget _buildEmpty(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -205,7 +160,7 @@ class ExploredStadiumsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "Isku day taariikh kale, wakhti kale, ama tiro ciyaartoy oo yar.",
+              "Isku day filters kale.",
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
