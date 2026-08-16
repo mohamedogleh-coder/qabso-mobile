@@ -19,8 +19,13 @@ final selectedDateProvider = StateProvider.autoDispose<DateTime>((ref) {
 
 class TimeSlotsListWidget extends ConsumerStatefulWidget {
   final BookingContextModel booking;
+  final bool showDatePicker;
 
-  const TimeSlotsListWidget({super.key, required this.booking});
+  const TimeSlotsListWidget({
+    super.key,
+    required this.booking,
+    this.showDatePicker = true,
+  });
 
   @override
   ConsumerState<TimeSlotsListWidget> createState() =>
@@ -38,7 +43,7 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
 
     return Column(
       children: [
-        _buildDateOfTheWeek(selectedDate),
+        if (widget.showDatePicker) _buildDateOfTheWeek(selectedDate),
         const SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

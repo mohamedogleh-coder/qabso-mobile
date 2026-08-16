@@ -177,7 +177,10 @@ class _ExploredStadiumCardWidgetState extends State<ExploredStadiumCardWidget> {
               child: expanded
                   ? Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: TimeSlotsListWidget(booking: contextModel),
+                      child: TimeSlotsListWidget(
+                        booking: contextModel,
+                        showDatePicker: false,
+                      ),
                     )
                   : SizedBox.shrink(),
             ),
