@@ -78,14 +78,69 @@ abstract class AppUtilityService {
   ///
   /// [use24HourFormat] forces the 24-hour dial regardless of device locale;
   /// pass `false` to follow the device instead.
+  // static Future<TimeOfDay?> pickTime({
+  //   required BuildContext context,
+  //   TimeOfDay? initialTime,
+  //   String? helpText,
+  //   bool use24HourFormat = true,
+  //   TimePickerEntryMode initialEntryMode = TimePickerEntryMode.dial,
+  // }) {
+  //   return showTimePicker(
+  //     context: context,
+  //     initialTime: initialTime ?? TimeOfDay.now(),
+  //     helpText: helpText,
+  //     initialEntryMode: initialEntryMode,
+  //     builder: (pickerContext, child) => _pickerTheme(
+  //       context: pickerContext,
+  //       child: child,
+  //       use24HourFormat: use24HourFormat,
+  //     ),
+  //   );
+  // }
+
+  // static Future<TimeOfDay?> pickTime({
+  //   required BuildContext context,
+  //   TimeOfDay? initialTime,
+  //   TimeOfDay? minTime,
+  //   String? helpText,
+  //   bool use24HourFormat = true,
+  //   TimePickerEntryMode initialEntryMode = TimePickerEntryMode.dial,
+  // }) async {
+  //   final picked = await showTimePicker(
+  //     context: context,
+  //     initialTime: initialTime ?? TimeOfDay.now(),
+  //     helpText: helpText,
+  //     initialEntryMode: initialEntryMode,
+  //     builder: (pickerContext, child) => _pickerTheme(
+  //       context: pickerContext,
+  //       child: child,
+  //       use24HourFormat: use24HourFormat,
+  //     ),
+  //   );
+  //
+  //   if (picked == null || minTime == null) {
+  //     return picked;
+  //   }
+  //
+  //   final pickedMinutes = picked.hour * 60 + picked.minute;
+  //   final minMinutes = minTime.hour * 60 + minTime.minute;
+  //
+  //   if (pickedMinutes < minMinutes) {
+  //     return null;
+  //   }
+  //
+  //   return picked;
+  // }
+
   static Future<TimeOfDay?> pickTime({
     required BuildContext context,
     TimeOfDay? initialTime,
+    TimeOfDay? minTime,
     String? helpText,
     bool use24HourFormat = true,
     TimePickerEntryMode initialEntryMode = TimePickerEntryMode.dial,
-  }) {
-    return showTimePicker(
+  }) async {
+    final picked = await showTimePicker(
       context: context,
       initialTime: initialTime ?? TimeOfDay.now(),
       helpText: helpText,
@@ -96,6 +151,31 @@ abstract class AppUtilityService {
         use24HourFormat: use24HourFormat,
       ),
     );
+
+    if (picked == null || minTime == null) {
+      return picked;
+    }
+
+    final pickedMinutes = picked.hour * 60 + picked.minute;
+    final minMinutes = minTime.hour * 60 + minTime.minute;
+
+    if (pickedMinutes < minMinutes) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Theme.of(context).colorScheme.error,
+            content: Text(
+              'Fadlan dooro wakhti aan lasoo dhaafin.',
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+          ),
+        );
+      }
+
+      return null;
+    }
+
+    return picked;
   }
 
   static Future<DateTime?> pickDate({

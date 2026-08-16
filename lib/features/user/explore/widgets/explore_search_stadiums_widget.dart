@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/utill/app_utility_service.dart';
 
 import '../../../../utill/app_date_util.dart';
+import '../explored_stadiums_screen.dart';
 import '../providers/explore_stadiums_filter_notifier.dart';
 
 class ExploreSearchStadiumsWidget extends ConsumerStatefulWidget {
@@ -93,6 +94,8 @@ class _ExploreSearchStadiumsWidgetState
               child: InkWell(
                 onTap: () async {
                   final eventDate = await AppUtilityService.pickDate(
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(Duration(days: 7)),
                     initialDate: filter.eventDate,
                     context: context,
                   );
@@ -119,6 +122,7 @@ class _ExploreSearchStadiumsWidgetState
                   InkWell(
                     onTap: () async {
                       final eventTime = await AppUtilityService.pickTime(
+                        minTime: TimeOfDay.now(),
                         context: context,
                       );
                       filterNotifier.updateTime(eventTime);
@@ -167,12 +171,12 @@ class _ExploreSearchStadiumsWidgetState
               ),
             ),
             onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => ExploredStadiumsScreen(),
-              //   ),
-              // );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ExploredStadiumsScreen(),
+                ),
+              );
             },
             label: Text("Raadi"),
             icon: Icon(Symbols.search),
