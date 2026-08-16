@@ -37,22 +37,22 @@ class _ExploredStadiumCardWidgetState extends State<ExploredStadiumCardWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        showAppBottomSheet(
-          context: context,
-          builder: (context) => ExploreSingleStadiumInfoWidget(
-            exploredStadiumModel: widget.stadiumModel,
-          ),
-        );
-      },
-      child: Card(
-        elevation: expanded ? 1 : 0,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              Padding(
+    return Card(
+      elevation: expanded ? 1 : 0,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            InkWell(
+              onTap: () {
+                showAppBottomSheet(
+                  context: context,
+                  builder: (context) => ExploreSingleStadiumInfoWidget(
+                    exploredStadiumModel: widget.stadiumModel,
+                  ),
+                );
+              },
+              child: Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Row(
                   children: [
@@ -170,44 +170,44 @@ class _ExploredStadiumCardWidgetState extends State<ExploredStadiumCardWidget> {
                   ],
                 ),
               ),
-              const Divider(height: 24),
-              AnimatedSize(
-                duration: AppConstants.animationDuration,
-                child: expanded
-                    ? Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: TimeSlotsListWidget(booking: contextModel),
-                      )
-                    : SizedBox.shrink(),
-              ),
-              if (expanded) ...[const Divider(height: 24)],
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    expanded = !expanded;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 4,
-                    horizontal: 8.0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: .center,
-                    children: [
-                      Icon(
-                        expanded
-                            ? Symbols.arrow_drop_up
-                            : Symbols.arrow_drop_down,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(expanded ? "Hide events" : "Show events"),
-                    ],
-                  ),
+            ),
+            const Divider(height: 24),
+            AnimatedSize(
+              duration: AppConstants.animationDuration,
+              child: expanded
+                  ? Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: TimeSlotsListWidget(booking: contextModel),
+                    )
+                  : SizedBox.shrink(),
+            ),
+            if (expanded) ...[const Divider(height: 24)],
+            InkWell(
+              onTap: () {
+                setState(() {
+                  expanded = !expanded;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 8.0,
+                ),
+                child: Row(
+                  mainAxisAlignment: .center,
+                  children: [
+                    Icon(
+                      expanded
+                          ? Symbols.arrow_drop_up
+                          : Symbols.arrow_drop_down,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(expanded ? "Hide events" : "Show events"),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
