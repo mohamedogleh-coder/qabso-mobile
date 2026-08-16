@@ -88,7 +88,7 @@ final userMenuList = [
   ),
 
   MenuItemsModel(
-    iconData: Symbols.book,
+    iconData: Symbols.favorite,
     label: "Fav stadiums",
     backgroundColor: const Color(0xFFF1F8E9),
     foregroundColor: const Color(0xFF689F38),

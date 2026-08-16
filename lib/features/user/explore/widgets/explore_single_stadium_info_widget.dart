@@ -446,14 +446,15 @@ class _ExploreSingleStadiumInfoWidgetState
 
     return Row(
       children: [
-        Icon(icon, size: 18, color: theme.colorScheme.primary),
-        const SizedBox(width: 8),
         Text(
           title,
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
+        const SizedBox(width: 8),
+
+        Icon(icon, size: 18, color: theme.colorScheme.primary),
       ],
     );
   }

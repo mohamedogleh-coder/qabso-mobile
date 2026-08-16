@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/user/user_shell.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../utill/app_dailogs.dart';
 import '../../../utill/error_widget.dart';
 import '../../../utill/loading_widget.dart';
 import '../../manager/stadium/stadium_model.dart';
@@ -22,17 +23,20 @@ class FavStadiumsScreen extends ConsumerWidget {
         titleSpacing: 20,
         title: Text("Favourite stadiums"),
         actions: [
-          TextButton.icon(
-            onPressed: () {},
-            label: Text("Clear all"),
-            icon: Icon(Symbols.clear_all),
-          ),
+          if (!favouritesAsync.isLoading &&
+              favouritesAsync.hasValue &&
+              (favouritesAsync.value ?? const <StadiumModel>[]).isNotEmpty)
+            TextButton.icon(
+              onPressed: () => _clearAll(context, ref),
+              label: Text("Clear all"),
+              icon: Icon(Symbols.clear_all),
+            ),
         ],
       ),
       body: favouritesAsync.when(
         skipLoadingOnRefresh: false,
         data: (stadiums) => stadiums.isEmpty
-            ? _buildEmpty(context,ref)
+            ? _buildEmpty(context, ref)
             : _buildList(context, ref, stadiums),
         error: (error, stackTrace) => ErrorRetryWidget(
           errorMessage: error is PostgrestException
@@ -42,6 +46,19 @@ class FavStadiumsScreen extends ConsumerWidget {
         ),
         loading: () => const LoadingWidget(),
       ),
+    );
+  }
+
+  Future<void> _clearAll(BuildContext context, WidgetRef ref) async {
+    await showAppConfirmationDialog(
+      context: context,
+      title: "Clear all favourites?",
+      message: "Every saved stadium will be removed from your list.",
+      confirmText: "Clear all",
+      isDestructive: true,
+      icon: Symbols.heart_broken,
+      onConfirm: () =>
+          ref.read(favouriteNotifierProvider.notifier).clearFavourites(),
     );
   }
 
@@ -58,15 +75,17 @@ class FavStadiumsScreen extends ConsumerWidget {
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             itemCount: stadiums.length,
-            itemBuilder: (context, index) =>
-                FavouriteStadiumCardWidget(stadium: stadiums[index]),
+            itemBuilder: (context, index) => FavouriteStadiumCardWidget(
+              key: ValueKey(stadiums[index].stadiumId),
+              stadium: stadiums[index],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEmpty(BuildContext context,WidgetRef ref) {
+  Widget _buildEmpty(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Center(
@@ -89,7 +108,7 @@ class FavStadiumsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: () {
-                ref.read(selectedIndexProvider.notifier).state=0;
+                ref.read(selectedIndexProvider.notifier).state = 0;
               },
               icon: Icon(Symbols.search),
               label: Text("Explore now"),

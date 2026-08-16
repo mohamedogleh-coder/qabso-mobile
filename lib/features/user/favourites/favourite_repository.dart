@@ -49,4 +49,18 @@ class FavouriteRepository {
 
     await _client.from(_favouritesTable).delete().eq('stadium_id', stadiumId);
   }
+
+  /// Removes every stadium the signed-in user has saved.
+  ///
+  /// The user is named here, unlike in [removeFavourite]. A delete with no
+  /// filter at all is refused, and the user is the only thing left to filter
+  /// on once the stadium is not being named.
+  static Future<void> clearFavourites() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('Cannot clear favourites: no authenticated user.');
+    }
+
+    await _client.from(_favouritesTable).delete().eq('user_id', userId);
+  }
 }

@@ -84,6 +84,23 @@ class FavouriteNotifierProvider extends AsyncNotifier<List<StadiumModel>> {
     }
   }
 
+  /// Removes every saved stadium and empties the list on success. Failures
+  /// are thrown to the caller, the same way [addFavourite] does, so a clear
+  /// that did not go through leaves the list on screen.
+  Future<void> clearFavourites() async {
+    if (_isSaving) {
+      throw StateError('A favourite is already being saved.');
+    }
+
+    _isSaving = true;
+    try {
+      await FavouriteRepository.clearFavourites();
+      state = const AsyncData([]);
+    } finally {
+      _isSaving = false;
+    }
+  }
+
   /// Removes [stadiumId] and drops it from the list on success. Failures are
   /// thrown to the caller for the same reason as [addFavourite].
   Future<void> removeFavourite(String stadiumId) async {
