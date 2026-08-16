@@ -6,6 +6,10 @@ class ExploredStadiumModel extends StadiumModel {
   final int capacity;
   final double cost;
 
+  final List<String> imageUrls;
+
+  final bool fav;
+
   const ExploredStadiumModel({
     super.stadiumId,
     required super.stadiumName,
@@ -17,6 +21,8 @@ class ExploredStadiumModel extends StadiumModel {
     required this.fieldId,
     required this.capacity,
     required this.cost,
+    this.imageUrls = const [],
+    this.fav = false,
   });
 
   factory ExploredStadiumModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +37,10 @@ class ExploredStadiumModel extends StadiumModel {
       fieldId: json['field_id'] as int,
       capacity: json['capacity'] as int,
       cost: (json['cost'] as num).toDouble(),
+      imageUrls: json['image_urls'] != null
+          ? List<String>.from(json['image_urls'] as List)
+          : const [],
+      fav: json['fav'] as bool? ?? false,
     );
   }
 
@@ -41,5 +51,7 @@ class ExploredStadiumModel extends StadiumModel {
     fieldId,
     capacity,
     cost,
+    imageUrls,
+    fav,
   ];
 }

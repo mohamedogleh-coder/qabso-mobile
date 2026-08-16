@@ -3,8 +3,10 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_list_widget.dart';
 import 'package:qabso_mobile/features/user/explore/models/explored_stadium_model.dart';
+import 'package:qabso_mobile/utill/app_dailogs.dart';
 
 import '../../../../utill/app_constants.dart';
+import 'explore_single_stadium_info_widget.dart';
 
 class ExploredStadiumCardWidget extends StatefulWidget {
   final ExploredStadiumModel stadiumModel;
@@ -37,7 +39,12 @@ class _ExploredStadiumCardWidgetState extends State<ExploredStadiumCardWidget> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        _showMoreOptions(context);
+        showAppBottomSheet(
+          context: context,
+          builder: (context) => ExploreSingleStadiumInfoWidget(
+            exploredStadiumModel: widget.stadiumModel,
+          ),
+        );
       },
       child: Card(
         elevation: expanded ? 1 : 0,
@@ -204,11 +211,5 @@ class _ExploredStadiumCardWidgetState extends State<ExploredStadiumCardWidget> {
         ),
       ),
     );
-  }
-
-  Widget _showMoreOptions(BuildContext context) {
-    return Column(children: [
-
-    ]);
   }
 }

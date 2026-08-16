@@ -6,18 +6,6 @@ import 'package:qabso_mobile/features/manager/events/event_booking_service.dart'
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/selected_time_widget.dart';
 
-/// Chooses how a slot is taken — the whole match or half of it, open or locked
-/// — and books that choice.
-///
-/// Only opened when the stadium allows half bookings; with nothing to choose
-/// the card books the slot whole without this step. The two switches decide
-/// what the database is told: half becomes `pending` and leaves the rest owed,
-/// whole becomes `confirmed`, and locking generates the code that becomes the
-/// booking's `event_key`.
-///
-/// Which payment sheet opens is [EventBookingService]'s business, not this
-/// widget's, so a manager and a customer both end up here and neither is
-/// mentioned by name.
 class EventBookingOptionsWidget extends ConsumerStatefulWidget {
   final BookingContextModel booking;
   final TimeSlotModel selectedTime;
@@ -50,8 +38,6 @@ class _EventBookingOptionsWidgetState
 
     setState(() {
       isHalfTaken = !isHalfTaken;
-      // Only half a booking can be locked: there is no remaining half to hold
-      // for anyone once the whole slot is paid.
       if (!isHalfTaken) {
         isLocked = false;
         eventKey = null;
@@ -74,8 +60,6 @@ class _EventBookingOptionsWidgetState
     setState(() => isBooking = busy);
   }
 
-  /// Collects the payment for the current choice and books it. Backing out of
-  /// the payment sheet leaves the slot untouched.
   Future<void> _handleBooking() async {
     if (isBooking) return;
 
@@ -118,8 +102,7 @@ class _EventBookingOptionsWidgetState
     final theme = Theme.of(context);
 
     return PopScope(
-      // A booking in flight must not be dismissed out from under itself.
-      canPop: !isBooking,
+       canPop: !isBooking,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
