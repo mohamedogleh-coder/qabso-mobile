@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../payments/payment_allocation_model.dart';
 import '../../../utill/app_date_util.dart';
+import 'models/event_details_model.dart';
 import 'models/half_booked_event_model.dart';
 import 'time_slots_model.dart';
 
@@ -53,6 +54,32 @@ class EventRepository {
     }
 
     return HalfBookedEventModel.fromJson(row);
+  }
+
+  /// Reads one booking with its stadium and field, what it came to, and every
+  /// payment taken for it.
+  ///
+  /// Who may see it is decided by `event_details_fn`: the customer whose money
+  /// is on the booking, or a manager of the stadium it is played at. Anyone
+  /// else gets no row back, so a missing row is thrown as "not found" rather
+  /// than told apart from "not allowed".
+  static Future<EventDetailsModel> getEventDetails({
+    required int eventId,
+  }) async {
+    final rows =
+        await _client.rpc(
+              'event_details_fn',
+              params: {'p_event_id': eventId},
+            )
+            as List;
+
+    if (rows.isEmpty) {
+      throw StateError('Event $eventId was not found.');
+    }
+
+    return EventDetailsModel.fromJson(
+      Map<String, dynamic>.from(rows.first as Map),
+    );
   }
 
   /// Takes the half a booking still owes and records the payment for it,

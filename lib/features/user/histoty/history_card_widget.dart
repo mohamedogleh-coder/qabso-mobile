@@ -1,29 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../utill/app_constants.dart';
 import '../../../utill/app_date_util.dart';
-import '../../manager/events/time_slots_model.dart';
+import '../../manager/events/event_status_style.dart';
+import '../../manager/events/widgets/event_details_sheet.dart';
 import 'history_model.dart';
 
- extension EventStatusStyle on EventStatus {
-  String get label => switch (this) {
-    EventStatus.available => "Open",
-    EventStatus.pending => "Half paid",
-    EventStatus.confirmed => "Booked",
-    EventStatus.completed => "Played",
-    EventStatus.cancelled => "Cancelled",
-  };
-
-  Color get color => switch (this) {
-    EventStatus.available => AppConstants.secondary,
-    EventStatus.pending => AppConstants.warning,
-    EventStatus.confirmed => AppConstants.primary,
-    EventStatus.completed => AppConstants.tertiary,
-    EventStatus.cancelled => AppConstants.error,
-  };
-}
-
-  class HistoryCardWidget extends StatelessWidget {
+class HistoryCardWidget extends StatelessWidget {
   final HistoryModel history;
 
   const HistoryCardWidget({super.key, required this.history});
@@ -42,31 +24,37 @@ import 'history_model.dart';
       ),
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
-      // The row is measured first so the stripe can be told to fill the card's
-      // height. Without this the stripe has no height of its own to take.
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // A plain filled box rather than a left border, because a border
-            // cannot be thick on one side only while the card is rounded.
-            Container(width: 6, color: color),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTitleRow(theme),
-                    const SizedBox(height: 4),
-                    _buildWhen(theme),
-                    const SizedBox(height: 8),
-                    _buildStatusRow(theme, color),
-                  ],
+      child: InkWell(
+        onTap: () =>
+            EventDetailsSheet.show(context, eventId: history.eventId),
+        splashColor: color.withValues(alpha: 0.14),
+        // The row is measured first so the stripe can be told to fill the
+        // card's height. Without this the stripe has no height of its own to
+        // take.
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // A plain filled box rather than a left border, because a border
+              // cannot be thick on one side only while the card is rounded.
+              Container(width: 6, color: color),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTitleRow(theme),
+                      const SizedBox(height: 4),
+                      _buildWhen(theme),
+                      const SizedBox(height: 8),
+                      _buildStatusRow(theme, color),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
