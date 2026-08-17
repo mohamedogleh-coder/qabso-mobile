@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:qabso_mobile/features/user/histoty/history_screen.dart';
 
 import '../../utill/app_bottom_navigation.dart';
 import '../auth/menu_items_model.dart';
 import 'explore/explore_screen.dart';
 import 'favourites/fav_stadiums_screen.dart';
 import 'settings/user_settings_screen.dart';
-import 'teams/teams_screen.dart';
 
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -22,10 +22,9 @@ class _UserShellState extends ConsumerState<UserShell> {
   static const _screens = [
     ExploreScreen(),
     FavStadiumsScreen(),
-    TeamsScreen(),
+    HistoryScreen(),
     UserSettingsScreen(),
   ];
-
 
   @override
   Widget build(BuildContext context) {

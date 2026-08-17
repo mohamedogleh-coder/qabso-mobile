@@ -6,7 +6,8 @@ enum EventStatus {
   available,
   pending,
   confirmed,
-  canceled;
+  completed,
+  cancelled;
 
   static EventStatus fromString(String value) {
     return EventStatus.values.firstWhere(

@@ -61,9 +61,11 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
         return;
 
       case EventStatus.confirmed:
-      case EventStatus.canceled:
+      case EventStatus.cancelled:
         await _handleConfirmedEvent();
         return;
+      case EventStatus.completed:
+        throw UnimplementedError();
     }
   }
 
