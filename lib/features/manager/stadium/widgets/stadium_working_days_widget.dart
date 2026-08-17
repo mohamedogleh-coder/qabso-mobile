@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../utill/app_constants.dart';
 import '../../../../utill/error_widget.dart';
 import '../../../../utill/loading_widget.dart';
 import '../../working_days/working_days.dart';
@@ -24,7 +25,17 @@ class StadiumWorkingDaysWidget extends ConsumerStatefulWidget {
 }
 
 class _StadiumWorkingDaysWidgetState
-    extends ConsumerState<StadiumWorkingDaysWidget> {
+    extends ConsumerState<StadiumWorkingDaysWidget>
+    with AutomaticKeepAliveClientMixin {
+  /// Stays alive while the stadium screen is open.
+  ///
+  /// TabBarView throws a tab away once the user swipes far enough from it, and
+  /// building it again is what made this tab read the days a second time.
+  /// Kept alive, the widget holds both its data and where the list was
+  /// scrolled to.
+  @override
+  bool get wantKeepAlive => true;
+
   /// Reads the days again. The provider is what holds the answer, so the
   /// screen and this widget always see the same one.
   void _reload() =>
@@ -36,6 +47,9 @@ class _StadiumWorkingDaysWidgetState
 
   @override
   Widget build(BuildContext context) {
+    // The keep-alive mixin asks for this before anything else is built.
+    super.build(context);
+
     final daysAsync = ref.watch(stadiumWorkingDaysProvider(widget.stadiumId));
 
     return daysAsync.when(
@@ -110,7 +124,7 @@ class _StadiumWorkingDaysWidgetState
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         color: Color.alphaBlend(
           color.withValues(alpha: 0.12),
           theme.colorScheme.surface,
@@ -168,11 +182,13 @@ class _StadiumWorkingDaysWidgetState
         icon: Symbols.event_busy,
         label: "Closed days",
         value: "${7 - open}",
+        color: Theme.of(context).colorScheme.error,
       ),
       _buildStat(
         icon: Symbols.schedule,
         label: "Longest day",
         value: _longestDay(week),
+        color: AppConstants.tertiary,
       ),
     ]);
   }
@@ -229,7 +245,7 @@ class _StadiumWorkingDaysWidgetState
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
+            border: Border.all(color: theme.highlightColor),
           ),
           child: Column(
             children: [
@@ -244,17 +260,18 @@ class _StadiumWorkingDaysWidgetState
     );
   }
 
-  /// One day: whether it is open, its name, and the hours it plays.
   Widget _buildDayRow(WorkingDayModel day) {
     final theme = Theme.of(context);
     final isToday = day.dayOfWeek == _today;
     final color = day.isOpen
         ? theme.colorScheme.primary
-        : theme.colorScheme.outline;
+        : theme.colorScheme.error;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      color: isToday
+      color: !day.isOpen
+          ? theme.colorScheme.error.withValues(alpha: 0.06)
+          : isToday
           ? theme.colorScheme.primary.withValues(alpha: 0.06)
           : Colors.transparent,
       child: Row(
@@ -275,9 +292,10 @@ class _StadiumWorkingDaysWidgetState
             day.dayName,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+              color: day.isOpen ? null : theme.colorScheme.error,
             ),
           ),
-          if (isToday) ...[const SizedBox(width: 8), _buildTodayChip()],
+          if (isToday) ...[const SizedBox(width: 8), _buildTodayChip(day)],
           const Spacer(),
           Text(
             _hours(day),
@@ -285,7 +303,7 @@ class _StadiumWorkingDaysWidgetState
               fontWeight: FontWeight.bold,
               color: day.isOpen
                   ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurfaceVariant,
+                  : theme.colorScheme.error,
             ),
           ),
         ],
@@ -293,19 +311,24 @@ class _StadiumWorkingDaysWidgetState
     );
   }
 
-  Widget _buildTodayChip() {
+  /// The chip takes the day's own colour, so "Today" on a closed day reads red
+  /// along with the rest of the row.
+  Widget _buildTodayChip(WorkingDayModel day) {
     final theme = Theme.of(context);
+    final color = day.isOpen
+        ? theme.colorScheme.primary
+        : theme.colorScheme.error;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         "Today",
         style: theme.textTheme.labelMedium?.copyWith(
-          color: theme.colorScheme.primary,
+          color: color,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -357,17 +380,26 @@ class _StadiumWorkingDaysWidgetState
 
   /// One fact: the icon on top, the answer under it, and the name of the
   /// thing at the bottom.
+  ///
+  /// [color] tells the fact apart from its neighbours. Left out, it is the
+  /// stadium's own green.
   Widget _buildStat({
     required IconData icon,
     required String label,
     required String value,
+    Color? color,
   }) {
     final theme = Theme.of(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 20, fill: 1, color: theme.colorScheme.primary),
+        Icon(
+          icon,
+          size: 20,
+          fill: 1,
+          color: color ?? theme.colorScheme.primary,
+        ),
         const SizedBox(height: 6),
         Text(
           value,

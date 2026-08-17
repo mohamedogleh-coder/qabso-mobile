@@ -48,12 +48,6 @@ class _StadiumInformationScreenState
       emptyTitle: "Working days",
       emptyMessage: "The days the stadium opens, and the hours it plays.",
     ),
-    _StadiumTab(
-      icon: Symbols.account_balance_wallet,
-      label: "Numbers",
-      emptyTitle: "Payment numbers",
-      emptyMessage: "The numbers this stadium takes its money on.",
-    ),
   ];
 
   @override
@@ -62,7 +56,6 @@ class _StadiumInformationScreenState
 
     _tabController = TabController(length: _tabs.length, vsync: this);
 
-    // Holds the stadium's data for as long as this screen is open.
     //
     // TabBarView throws a tab's widget away once the user swipes far enough
     // from it, and without a listener the provider would go with it — so
@@ -101,7 +94,6 @@ class _StadiumInformationScreenState
           _buildProfileTab(),
           _buildEmptyTab(_tabs[1]),
           _buildWorkingDaysTab(),
-          _buildEmptyTab(_tabs[3]),
         ],
       ),
     );

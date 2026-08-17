@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../utill/app_constants.dart';
 import '../../../../utill/app_dailogs.dart';
 import '../../../../utill/current_position_provider.dart';
 import '../../../../utill/error_widget.dart';
@@ -26,13 +27,22 @@ class StadiumProfileWidget extends ConsumerStatefulWidget {
       _StadiumProfileWidgetState();
 }
 
-class _StadiumProfileWidgetState extends ConsumerState<StadiumProfileWidget> {
+class _StadiumProfileWidgetState extends ConsumerState<StadiumProfileWidget>
+    with AutomaticKeepAliveClientMixin {
+  /// Stays alive while the stadium screen is open, so moving between the tabs
+  /// never reads the stadium again and the page keeps where it was scrolled.
+  @override
+  bool get wantKeepAlive => true;
+
   /// Reads the stadium again. The provider is what holds the answer, so the
   /// screen and this widget always see the same one.
   void _reload() => ref.invalidate(stadiumProfileProvider(widget.stadiumId));
 
   @override
   Widget build(BuildContext context) {
+    // The keep-alive mixin asks for this before anything else is built.
+    super.build(context);
+
     final profileAsync = ref.watch(stadiumProfileProvider(widget.stadiumId));
 
     return profileAsync.when(
@@ -109,10 +119,14 @@ class _StadiumProfileWidgetState extends ConsumerState<StadiumProfileWidget> {
 
   Widget _buildStadiumInfo(StadiumProfileModel profile) {
     return _buildStatStrip([
+      // Distance and half booking only tell the customer something; they are
+      // not the stadium's own state, so they take the blue rather than the
+      // green and the strip does not read as one colour.
       _buildStat(
         icon: Symbols.near_me,
         label: "Away",
         value: _distance(profile),
+        color: AppConstants.primary,
       ),
       _buildStat(
         icon: Symbols.sports,
@@ -123,6 +137,9 @@ class _StadiumProfileWidgetState extends ConsumerState<StadiumProfileWidget> {
         icon: Symbols.sliders,
         label: "Half booking",
         value: profile.allowHalfBooking ? "Allowed" : "No",
+        color: profile.allowHalfBooking
+            ? AppConstants.primary
+            : Theme.of(context).colorScheme.error,
       ),
     ]);
   }
@@ -137,10 +154,12 @@ class _StadiumProfileWidgetState extends ConsumerState<StadiumProfileWidget> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(
+            // The map is somewhere to go, not something the stadium is, so it
+            // takes the blue.
+            const Icon(
               Symbols.location_on,
               fill: 1,
-              color: theme.colorScheme.primary,
+              color: AppConstants.tertiary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -354,13 +373,19 @@ class _StadiumProfileWidgetState extends ConsumerState<StadiumProfileWidget> {
     required IconData icon,
     required String label,
     required String value,
+    Color? color,
   }) {
     final theme = Theme.of(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 20, fill: 1, color: theme.colorScheme.primary),
+        Icon(
+          icon,
+          size: 20,
+          fill: 1,
+          color: color ?? theme.colorScheme.primary,
+        ),
         const SizedBox(height: 6),
         Text(
           value,
