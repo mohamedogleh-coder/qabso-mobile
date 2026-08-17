@@ -32,7 +32,7 @@ class EventDetailsSheet extends StatefulWidget {
   static Future<void> show(BuildContext context, {required int eventId}) {
     return showAppBottomSheet<void>(
       context: context,
-      title: "Faahfaahinta bookingka",
+      // title: "Faahfaahinta bookingka",
       builder: (sheetContext) => EventDetailsSheet(eventId: eventId),
     );
   }
@@ -102,6 +102,22 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              IconButton.outlined(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: Icon(Symbols.close),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                "Faahfaahinta bookingka",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           _buildHeader(details),
           const SizedBox(height: 16),
           _buildReceipt(details),
@@ -277,7 +293,6 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
     );
   }
 
-  /// Every payment and refund taken on the booking, oldest first.
   Widget _buildReceipt(EventDetailsModel details) {
     final theme = Theme.of(context);
     final transactions = details.transactions;
@@ -304,8 +319,6 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
     );
   }
 
-  /// One transaction: what it was, who it came from, and the portions it was
-  /// split into.
   Widget _buildTransaction(EventTransactionModel transaction) {
     final theme = Theme.of(context);
 
