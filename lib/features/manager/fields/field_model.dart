@@ -6,10 +6,6 @@ class FieldModel extends Equatable {
   final double cost;
   final bool allowBooking;
   final List<String> fieldImages;
-
-  /// The day the field was registered, and the last time it was changed. Both
-  /// are set by the database, so they are null on a field that has not been
-  /// saved yet.
   final DateTime? createdAt;
   final DateTime? updatedAt;
 

@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../utill/app_dailogs.dart';
 import '../../../utill/current_position_provider.dart';
+import '../../manager/stadium/stadium_information_screen.dart';
 import '../../manager/stadium/stadium_model.dart';
 import 'favourite_notifier_provider.dart';
 
@@ -50,19 +51,34 @@ class _FavouriteStadiumCardWidgetState
     return Card(
       elevation: 0,
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            const Divider(height: 20),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildFactsRow(),
-            ),
-          ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _openStadium,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(),
+              const Divider(height: 20),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _buildFactsRow(),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Opens the whole stadium. The stadium already in hand is passed along, so
+  /// the screen names itself without reading anything.
+  void _openStadium() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) =>
+            StadiumInformationScreen(stadium: widget.stadium),
       ),
     );
   }
