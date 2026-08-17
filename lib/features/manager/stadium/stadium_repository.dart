@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../utill/supabase_storage_service.dart';
+import '../fields/field_model.dart';
 import '../working_days/working_days.dart';
 import 'models/stadium_profile_model.dart';
 import 'stadium_information_model.dart';
@@ -13,6 +14,7 @@ class StadiumRepository {
   static const _stadiumInformationFn = 'stadium_information_fn';
   static const _stadiumProfileFn = 'stadium_profile_fn';
   static const _stadiumWorkingDaysFn = 'stadium_working_days_fn';
+  static const _stadiumFieldsFn = 'stadium_fields_fn';
 
   static Future<StadiumModel?> getCurrentManagerStadium() async {
     final userId = _client.auth.currentUser?.id;
@@ -27,6 +29,35 @@ class StadiumRepository {
     if (row == null) return null;
 
     return StadiumModel.fromJson(row);
+  }
+
+  /// Reads every field a stadium has, biggest first — the ones open to
+  /// booking and the ones the manager has closed alike.
+  ///
+  /// Nothing is filtered out here. FieldModel.allowBooking is what tells the
+  /// two apart, so the screen decides how a closed field is shown.
+  ///
+  /// The database keeps storage paths, not links, so each one becomes a public
+  /// URL and every field arrives ready for Image.network.
+  static Future<List<FieldModel>> getStadiumFields({
+    required String stadiumId,
+  }) async {
+    final rows =
+        await _client.rpc(
+              _stadiumFieldsFn,
+              params: {'p_stadium_id': stadiumId},
+            )
+            as List;
+
+    return rows.map((row) {
+      final field = FieldModel.fromJson(Map<String, dynamic>.from(row as Map));
+
+      return field.copyWith(
+        fieldImages: field.fieldImages
+            .map(SupabaseStorageService.getPublicUrl)
+            .toList(),
+      );
+    }).toList();
   }
 
   /// Reads the working days a stadium has saved, in week order.

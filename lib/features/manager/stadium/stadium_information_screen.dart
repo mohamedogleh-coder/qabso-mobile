@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'stadium_fields_provider.dart';
 import 'stadium_model.dart';
 import 'stadium_profile_provider.dart';
 import 'stadium_working_days_provider.dart';
+import 'widgets/stadium_fields_widget.dart';
 import 'widgets/stadium_profile_widget.dart';
 import 'widgets/stadium_working_days_widget.dart';
 
@@ -67,6 +69,7 @@ class _StadiumInformationScreenState
     if (stadiumId != null) {
       ref.listenManual(stadiumProfileProvider(stadiumId), (_, _) {});
       ref.listenManual(stadiumWorkingDaysProvider(stadiumId), (_, _) {});
+      ref.listenManual(stadiumFieldsProvider(stadiumId), (_, _) {});
     }
   }
 
@@ -92,16 +95,13 @@ class _StadiumInformationScreenState
         controller: _tabController,
         children: [
           _buildProfileTab(),
-          _buildEmptyTab(_tabs[1]),
+          _buildFieldsTab(),
           _buildWorkingDaysTab(),
         ],
       ),
     );
   }
 
-  /// The icon sits over its label, and the selected tab is underlined. The
-  /// underline is rounded and sized to the tab rather than the label, so it
-  /// reads as one bar under the whole tab.
   PreferredSizeWidget _buildTabBar() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -143,6 +143,14 @@ class _StadiumInformationScreenState
     if (stadiumId == null) return _buildEmptyTab(_tabs.first);
 
     return StadiumProfileWidget(stadiumId: stadiumId);
+  }
+
+  /// The Fields tab. The whole stadium goes in rather than only its id,
+  /// because booking a slot needs the stadium's half-booking rule too.
+  Widget _buildFieldsTab() {
+    if (widget.stadium.stadiumId == null) return _buildEmptyTab(_tabs[1]);
+
+    return StadiumFieldsWidget(stadium: widget.stadium);
   }
 
   /// The Working days tab, read the same way the Profile tab is.
