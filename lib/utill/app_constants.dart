@@ -34,6 +34,9 @@ abstract class AppConstants {
 
   static const Duration animationDuration = Duration(milliseconds: 300);
 
+
+  static const Duration dashboardRefreshInterval = Duration(minutes: 3);
+
   static const String appName = 'Qabso';
   static const String appVersion = 'V1.0';
 
