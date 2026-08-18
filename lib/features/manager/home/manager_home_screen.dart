@@ -11,6 +11,7 @@ import '../../../utill/error_widget.dart';
 import '../../auth/menu_items_model.dart';
 import '../../auth/profile_screen.dart';
 import '../../auth/user_avatar_widget.dart';
+import '../events/booking_search_screen.dart';
 import '../stadium/stadium_model.dart';
 import 'manager_home_model.dart';
 import 'manager_home_notifier.dart';
@@ -41,7 +42,11 @@ class ManagerHomeScreen extends ConsumerWidget {
         title: const AppBrandWidget(),
         titleSpacing: 0,
         actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.search)),
+          IconButton(
+            onPressed: () => _openSearch(context),
+            tooltip: "Find a booking",
+            icon: const Icon(Icons.search),
+          ),
           IconButton(onPressed: () {}, icon: Icon(Icons.help_outline)),
 
           // TextButton.icon(onPressed: (){}, label: Text("Feed back"),icon: Icon(Icons.feedback),),
@@ -142,6 +147,22 @@ class ManagerHomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Opens the search for a booking by the customer's phone number.
+  ///
+  /// A stadium that arrived without an id has nothing to search, so the
+  /// screen is not opened at all.
+  void _openSearch(BuildContext context) {
+    final stadiumId = stadium.stadiumId;
+
+    if (stadiumId == null) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => BookingSearchScreen(stadiumId: stadiumId),
       ),
     );
   }

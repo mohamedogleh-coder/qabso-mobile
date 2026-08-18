@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../payments/payment_allocation_model.dart';
 import '../../../utill/app_date_util.dart';
+import 'models/booking_search_result_model.dart';
 import 'models/event_details_model.dart';
 import 'models/half_booked_event_model.dart';
 import 'time_slots_model.dart';
@@ -82,6 +83,39 @@ class EventRepository {
     );
   }
 
+  /// Finds a stadium's bookings by the customer's phone number, newest first.
+  ///
+  /// [phone] is matched on its digits alone and anywhere in the number, so the
+  /// last few digits find a booking however the number was written down.
+  /// Fewer than four digits is refused by the database rather than answered.
+  ///
+  /// Only a manager of [stadiumId] may search it, which the function decides —
+  /// anyone else gets a [PostgrestException] carrying its message.
+  static Future<List<BookingSearchResultModel>> searchBookingsByPhone({
+    required String stadiumId,
+    required String phone,
+    int limit = 50,
+  }) async {
+    final rows =
+        await _client.rpc(
+              'search_bookings_by_phone_fn',
+              params: {
+                'p_stadium_id': stadiumId,
+                'p_phone': phone,
+                'p_limit': limit,
+              },
+            )
+            as List;
+
+    return rows
+        .map(
+          (row) => BookingSearchResultModel.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList();
+  }
+
   /// Takes the half a booking still owes and records the payment for it,
   /// returning the booking's id.
   ///
@@ -104,11 +138,21 @@ class EventRepository {
     String? eventKey,
     String? paidUser,
     String? processedBy,
+    String? payerPhone,
   }) async {
     // Mirrors the function's own check, which mirrors chk_transaction_actors.
     if ((paidUser == null) == (processedBy == null)) {
       throw ArgumentError(
         'Exactly one of paidUser or processedBy is required.',
+      );
+    }
+
+    // Mirrors chk_payer_phone_only_without_user. A signed-in customer's
+    // number is read through paidUser, so recording it here as well would
+    // only leave a copy to go stale.
+    if (paidUser != null && payerPhone != null) {
+      throw ArgumentError(
+        'payerPhone belongs to a walk-in, so it cannot be sent with paidUser.',
       );
     }
 
@@ -153,6 +197,7 @@ class EventRepository {
         'p_paid_user': paidUser,
         'p_processed_by': processedBy,
         'p_merchants': payments.map((payment) => payment.toJson()).toList(),
+        'p_payer_phone': payerPhone,
       },
     );
 
@@ -189,6 +234,7 @@ class EventRepository {
     String? eventKey,
     String? paidUser,
     String? processedBy,
+    String? payerPhone,
   }) async {
     if (eventStatus != EventStatus.pending &&
         eventStatus != EventStatus.confirmed) {
@@ -203,6 +249,15 @@ class EventRepository {
     if ((paidUser == null) == (processedBy == null)) {
       throw ArgumentError(
         'Exactly one of paidUser or processedBy is required.',
+      );
+    }
+
+    // Mirrors chk_payer_phone_only_without_user. A signed-in customer's
+    // number is read through paidUser, so recording it here as well would
+    // only leave a copy to go stale.
+    if (paidUser != null && payerPhone != null) {
+      throw ArgumentError(
+        'payerPhone belongs to a walk-in, so it cannot be sent with paidUser.',
       );
     }
 
@@ -249,6 +304,7 @@ class EventRepository {
         'p_paid_user': paidUser,
         'p_processed_by': processedBy,
         'p_merchants': payments.map((payment) => payment.toJson()).toList(),
+        'p_payer_phone': payerPhone,
       },
     );
 

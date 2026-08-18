@@ -32,6 +32,18 @@ class PaymentNotifier extends Notifier<PaymentResult> {
     state = state.copyWith(discount: discount);
   }
 
+  /// Records the number a walk-in customer gave at the desk.
+  ///
+  /// A blank one is kept as null rather than an empty string, so the column
+  /// holds either a number or nothing at all.
+  void setPayerPhone(String phone) {
+    final trimmed = phone.trim();
+
+    state = state.copyWith(
+      payerPhone: () => trimmed.isEmpty ? null : trimmed,
+    );
+  }
+
   /// Records what [merchant] is taking — or, with a null merchant, what is
   /// being paid in cash.
   ///

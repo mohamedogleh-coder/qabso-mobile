@@ -17,11 +17,21 @@ class PaymentResult extends Equatable {
     this.requiredAmount = 0,
     this.discount = 0,
     this.allocations = const [],
+    this.payerPhone,
   });
 
   final double requiredAmount;
   final double discount;
   final List<PaymentAllocationModel> allocations;
+
+  /// The number a walk-in customer gave at the desk, so the manager can find
+  /// the payment again and call them back. It becomes
+  /// `transactions.payer_phone`.
+  ///
+  /// Null on money that has no customer to ring — an expense — and on a
+  /// payment from a signed-in customer, whose number is already read through
+  /// `paid_user`.
+  final String? payerPhone;
 
   /// What the allocations have to cover once the discount is applied.
   double get amountToSettle => requiredAmount - discount;
@@ -58,18 +68,28 @@ class PaymentResult extends Equatable {
     return 0;
   }
 
+  /// [payerPhone] is passed as a function so it can be cleared, the way
+  /// TimeSlotModel.copyWith takes its event key. A plain null would mean
+  /// "leave it alone".
   PaymentResult copyWith({
     double? requiredAmount,
     double? discount,
     List<PaymentAllocationModel>? allocations,
+    String? Function()? payerPhone,
   }) {
     return PaymentResult(
       requiredAmount: requiredAmount ?? this.requiredAmount,
       discount: discount ?? this.discount,
       allocations: allocations ?? this.allocations,
+      payerPhone: payerPhone != null ? payerPhone() : this.payerPhone,
     );
   }
 
   @override
-  List<Object?> get props => [requiredAmount, discount, allocations];
+  List<Object?> get props => [
+    requiredAmount,
+    discount,
+    allocations,
+    payerPhone,
+  ];
 }

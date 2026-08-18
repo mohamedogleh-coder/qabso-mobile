@@ -30,6 +30,7 @@ Future<PaymentResult?> showPaymentSheet({
   String title = "Payment",
   String confirmText = "Pay",
   bool allowDiscount = true,
+  bool needPayerPhone = false,
 }) {
   return showAppBottomSheet<PaymentResult>(
     context: context,
@@ -39,6 +40,7 @@ Future<PaymentResult?> showPaymentSheet({
         requiredAmount: requiredAmount,
         confirmText: confirmText,
         allowDiscount: allowDiscount,
+        needPayerPhone: needPayerPhone,
         onCancel: () => Navigator.pop(sheetContext),
         onSubmit: (payment) => Navigator.pop(sheetContext, payment),
       ),
@@ -65,6 +67,7 @@ class PaymentWidget extends StatelessWidget {
     this.onCancel,
     this.confirmText = "Pay",
     this.allowDiscount = true,
+    this.needPayerPhone = false,
     this.isSubmitting = false,
   });
 
@@ -83,6 +86,15 @@ class PaymentWidget extends StatelessWidget {
   /// `chk_discount_only_on_payment` enforces. Pass false to hide the field.
   final bool allowDiscount;
 
+  /// Asks the manager for the customer's phone number, and will not let the
+  /// payment through without one.
+  ///
+  /// True when a customer is paying at the desk: they have no account, so
+  /// nothing else records who they were, and `transactions.payer_phone` is
+  /// the only way to find them again. False for an expense, which has no
+  /// customer at all — `chk_payer_phone_only_on_payment` would refuse one.
+  final bool needPayerPhone;
+
   /// Lets the parent lock the form while it does the actual submitting.
   final bool isSubmitting;
 
@@ -99,6 +111,7 @@ class PaymentWidget extends StatelessWidget {
         onCancel: onCancel,
         confirmText: confirmText,
         allowDiscount: allowDiscount,
+        needPayerPhone: needPayerPhone,
         isSubmitting: isSubmitting,
       ),
     );
@@ -111,6 +124,7 @@ class _PaymentForm extends ConsumerStatefulWidget {
     required this.onCancel,
     required this.confirmText,
     required this.allowDiscount,
+    required this.needPayerPhone,
     required this.isSubmitting,
   });
 
@@ -118,6 +132,7 @@ class _PaymentForm extends ConsumerStatefulWidget {
   final VoidCallback? onCancel;
   final String confirmText;
   final bool allowDiscount;
+  final bool needPayerPhone;
   final bool isSubmitting;
 
   @override
@@ -138,8 +153,26 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
     return "\$${amount.toStringAsFixed(2)}";
   }
 
+  /// What is wrong with the number as it stands, or null when it will do.
+  ///
+  /// Doubles as the field's own error text and as the submit gate, so the
+  /// button and the message can never disagree about whether it is good.
+  String? _phoneProblem(String? phone) {
+    if (!widget.needPayerPhone) return null;
+
+    final digits = (phone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (digits.isEmpty) return "Fadlan taleefanka macmiilka geli";
+    if (digits.length < 7 || digits.length > 15) {
+      return "Taleefanku waa inuu sax ahaado";
+    }
+
+    return null;
+  }
+
   void _handleSubmit(PaymentResult payment) {
     if (widget.isSubmitting || !payment.canSubmit) return;
+    if (_phoneProblem(payment.payerPhone) != null) return;
 
     widget.onSubmit(payment);
   }
@@ -156,6 +189,10 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSummarySection(payment),
+          if (widget.needPayerPhone) ...[
+            const SizedBox(height: 12),
+            _buildPayerPhoneSection(payment),
+          ],
           const SizedBox(height: 12),
           merchantsAsync.when(
             data: (merchants) => _buildMethodsSection(payment, merchants),
@@ -235,6 +272,46 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
             child: Divider(height: 1),
           ),
           _buildRemainingRow(payment),
+        ],
+      ),
+    );
+  }
+
+  /// Who paid, when there is nobody signed in to say so.
+  ///
+  /// A customer at the desk has no account, so this number is the only record
+  /// of who the money came from — the manager finds the payment by it later,
+  /// and rings them on it.
+  Widget _buildPayerPhoneSection(PaymentResult payment) {
+    final theme = Theme.of(context);
+
+    return _buildSection(
+      icon: Symbols.call,
+      title: "Customer",
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppInputTextWidget(
+            label: "Phone number",
+            hintText: "063 4123456",
+            prefixIcon: Symbols.call,
+            keyboardType: TextInputType.phone,
+            enabled: !widget.isSubmitting,
+            value: payment.payerPhone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
+              LengthLimitingTextInputFormatter(20),
+            ],
+            onChanged: _notifier.setPayerPhone,
+            validator: _phoneProblem,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Waa lagu heli karaa macmiilka haddii wax dhacaan.",
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -485,7 +562,12 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
         Expanded(
           flex: 3,
           child: FilledButton.icon(
-            onPressed: payment.canSubmit && !widget.isSubmitting
+            // The money must add up and, when a customer is paying at the
+            // desk, their number must be there too.
+            onPressed:
+                payment.canSubmit &&
+                    _phoneProblem(payment.payerPhone) == null &&
+                    !widget.isSubmitting
                 ? () => _handleSubmit(payment)
                 : null,
             icon: widget.isSubmitting

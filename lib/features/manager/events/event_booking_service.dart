@@ -97,10 +97,13 @@ class EventBookingService {
     }
 
     if (isManager(appUser)) {
+      // A manager is taking money at the desk from someone with no account,
+      // so their number is asked for: it is the only record of who paid.
       return showPaymentSheet(
         context: context,
         requiredAmount: amount,
         title: slot.label,
+        needPayerPhone: true,
       );
     }
 
@@ -192,6 +195,10 @@ class EventBookingService {
         eventKey: eventKey,
         paidUser: takenByManager ? null : appUser.id,
         processedBy: takenByManager ? appUser.id : null,
+        // Only a desk payment carries one. A signed-in customer is already
+        // recorded as paidUser, and chk_payer_phone_only_without_user refuses
+        // both at once.
+        payerPhone: takenByManager ? payment.payerPhone : null,
       );
 
       // The grid is what tells everyone else the slot is gone.
@@ -266,6 +273,7 @@ class EventBookingService {
         eventKey: eventKey,
         paidUser: takenByManager ? null : appUser.id,
         processedBy: takenByManager ? appUser.id : null,
+        payerPhone: takenByManager ? payment.payerPhone : null,
       );
 
       // The slot must now show as fully booked, and this booking has no half
