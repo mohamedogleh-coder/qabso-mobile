@@ -154,7 +154,11 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _openItem(BuildContext context, MenuItemsModel item) {
-    if (item.path == AppConstants.dashboard) return;
+    if (item.path == AppConstants.dashboard) {
+      Navigator.of(context).pop();
+      return;
+    }
+
     Navigator.pushNamed(context, item.path);
   }
 
