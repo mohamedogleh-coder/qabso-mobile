@@ -10,9 +10,37 @@ import 'package:qabso_mobile/utill/app_constants.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
 import 'package:qabso_mobile/utill/error_widget.dart';
 import 'package:qabso_mobile/utill/loading_widget.dart';
+import 'package:qabso_mobile/utill/pref_service.dart';
 
-class WorkingDaysScreen extends ConsumerWidget {
+class WorkingDaysScreen extends ConsumerStatefulWidget {
   const WorkingDaysScreen({super.key});
+
+  @override
+  ConsumerState<WorkingDaysScreen> createState() => _WorkingDaysScreenState();
+}
+
+class _WorkingDaysScreenState extends ConsumerState<WorkingDaysScreen> {
+  /// Whether the panel explaining the screen is showing. Seeded from what the
+  /// user chose last time, so a panel they closed stays closed.
+  late bool _showInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _showInfo = !PrefService.get(AppConstants.workingDays);
+  }
+
+  /// Shows the panel when it is closed, and closes it when it is showing.
+  ///
+  /// The screen moves first and the phone is written to afterwards, so the
+  /// panel never waits on the disk.
+  void _toggleInfo() {
+    setState(() => _showInfo = !_showInfo);
+
+    _showInfo
+        ? PrefService.delete(AppConstants.workingDays)
+        : PrefService.put(AppConstants.workingDays);
+  }
 
   void _openEditor(BuildContext context) {
     Navigator.push(
@@ -48,9 +76,14 @@ class WorkingDaysScreen extends ConsumerWidget {
           child: child,
         ),
       ),
+      // The warning is not the user's to close: a stadium shut every day takes
+      // no bookings at all, and that has to stay on screen. Only the panel
+      // explaining the screen answers to _showInfo.
       child: isAllClosed
           ? _buildAllClosedWarning(context, key: const ValueKey('warning'))
-          : _buildHeader(context, key: const ValueKey('header')),
+          : _showInfo
+          ? _buildHeader(context, key: const ValueKey('header'))
+          : const SizedBox.shrink(key: ValueKey('none')),
     );
   }
 
@@ -104,8 +137,24 @@ class WorkingDaysScreen extends ConsumerWidget {
               ],
             ),
           ),
+          IconButton(
+            onPressed: _toggleInfo,
+            tooltip: "Close",
+            icon: Icon(Symbols.close, color: colorScheme.onSurfaceVariant),
+          ),
         ],
       ),
+    );
+  }
+
+  /// Brings the panel back after it has been closed, and closes it again.
+  /// The icon is filled while the panel is showing, so the button says which
+  /// way it will go.
+  Widget _buildInfoButton() {
+    return IconButton(
+      onPressed: _toggleInfo,
+      tooltip: _showInfo ? "Hide info" : "Show info",
+      icon: Icon(Symbols.info, fill: _showInfo ? 1 : 0),
     );
   }
 
@@ -160,13 +209,14 @@ class WorkingDaysScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final workingDaysAsync = ref.watch(workingDaysNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Working Days"),
         actions: [
+          _buildInfoButton(),
           if (workingDaysAsync.value?.isNotEmpty ?? false)
             TextButton.icon(
               onPressed: () => _openEditor(context),

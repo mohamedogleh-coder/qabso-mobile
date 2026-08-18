@@ -465,7 +465,7 @@ Future<T?> showAppBottomSheet<T>({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (title != null)
+               if (title != null)
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     20,

@@ -8,6 +8,7 @@ import 'package:qabso_mobile/features/manager/fields/field_notifier_provider.dar
 import 'package:qabso_mobile/utill/app_constants.dart';
 import 'package:qabso_mobile/utill/error_widget.dart';
 import 'package:qabso_mobile/utill/loading_widget.dart';
+import 'package:qabso_mobile/utill/pref_service.dart';
 
 class FieldsScreen extends ConsumerStatefulWidget {
   const FieldsScreen({super.key});
@@ -18,6 +19,39 @@ class FieldsScreen extends ConsumerStatefulWidget {
 
 class _FieldsScreenState extends ConsumerState<FieldsScreen> {
   int expandedFieldId = 0;
+
+  /// Whether the panel explaining the screen is showing. Seeded from what the
+  /// user chose last time, so a panel they closed stays closed.
+  late bool _showInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _showInfo = !PrefService.get(AppConstants.fields);
+  }
+
+  /// Shows the panel when it is closed, and closes it when it is showing.
+  ///
+  /// The screen moves first and the phone is written to afterwards, so the
+  /// panel never waits on the disk.
+  void _toggleInfo() {
+    setState(() => _showInfo = !_showInfo);
+
+    _showInfo
+        ? PrefService.delete(AppConstants.fields)
+        : PrefService.put(AppConstants.fields);
+  }
+
+  /// Brings the panel back after it has been closed, and closes it again.
+  /// The icon is filled while the panel is showing, so the button says which
+  /// way it will go.
+  Widget _buildInfoButton() {
+    return IconButton(
+      onPressed: _toggleInfo,
+      tooltip: _showInfo ? "Hide info" : "Show info",
+      icon: Icon(Symbols.info, fill: _showInfo ? 1 : 0),
+    );
+  }
 
   void _openEditor() {
     Navigator.push(
@@ -33,6 +67,7 @@ class _FieldsScreenState extends ConsumerState<FieldsScreen> {
       appBar: AppBar(
         title: Text("Fields"),
         actions: [
+          _buildInfoButton(),
           if (!fieldsAsync.isLoading && fieldsAsync.hasValue)
             TextButton.icon(
               onPressed: _openEditor,
@@ -91,12 +126,17 @@ class _FieldsScreenState extends ConsumerState<FieldsScreen> {
           child: child,
         ),
       ),
+      // The warning is not the user's to close: a stadium with nothing
+      // bookable has to keep saying so. Only the panel explaining the screen
+      // answers to _showInfo.
       child: hasNoBookableField
           ? _buildNoBookableFieldWarning(
               fields.isEmpty,
               key: ValueKey('warning-${fields.isEmpty}'),
             )
-          : _buildHeader(key: const ValueKey('header')),
+          : _showInfo
+          ? _buildHeader(key: const ValueKey('header'))
+          : const SizedBox.shrink(key: ValueKey('none')),
     );
   }
 
@@ -149,6 +189,11 @@ class _FieldsScreenState extends ConsumerState<FieldsScreen> {
                 ),
               ],
             ),
+          ),
+          IconButton(
+            onPressed: _toggleInfo,
+            tooltip: "Close",
+            icon: Icon(Symbols.close, color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),

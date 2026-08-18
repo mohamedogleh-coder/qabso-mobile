@@ -23,10 +23,12 @@ import 'features/manager/working_days/working_days_screen.dart';
 import 'features/user/user_shell.dart';
 import 'utill/app_constants.dart';
 import 'utill/app_utility_service.dart';
+import 'utill/pref_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
+  await PrefService.init();
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     publishableKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY']!,

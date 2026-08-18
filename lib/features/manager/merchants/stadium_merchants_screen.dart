@@ -6,6 +6,7 @@ import 'package:qabso_mobile/features/manager/merchants/merchant_notifier_provid
 import 'package:qabso_mobile/features/manager/merchants/merchant_provider_model.dart';
 import 'package:qabso_mobile/features/manager/merchants/stadium_merchant_model.dart';
 import 'package:qabso_mobile/utill/app_constants.dart';
+import 'package:qabso_mobile/utill/pref_service.dart';
 
 import '../../../utill/app_dailogs.dart';
 import '../../../utill/app_input_text_widget.dart';
@@ -36,6 +37,39 @@ class _StadiumMerchantsScreenState
   final List<MerchantDraft> _drafts = [];
   final _formKey = GlobalKey<FormState>();
   bool isSubmitting = false;
+
+  /// Whether the panel explaining the screen is showing. Seeded from what the
+  /// user chose last time, so a panel they closed stays closed.
+  late bool _showInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _showInfo = !PrefService.get(AppConstants.merchants);
+  }
+
+  /// Shows the panel when it is closed, and closes it when it is showing.
+  ///
+  /// The screen moves first and the phone is written to afterwards, so the
+  /// panel never waits on the disk.
+  void _toggleInfo() {
+    setState(() => _showInfo = !_showInfo);
+
+    _showInfo
+        ? PrefService.delete(AppConstants.merchants)
+        : PrefService.put(AppConstants.merchants);
+  }
+
+  /// Brings the panel back after it has been closed, and closes it again.
+  /// The icon is filled while the panel is showing, so the button says which
+  /// way it will go.
+  Widget _buildInfoButton() {
+    return IconButton(
+      onPressed: _toggleInfo,
+      tooltip: _showInfo ? "Hide info" : "Show info",
+      icon: Icon(Symbols.info, fill: _showInfo ? 1 : 0),
+    );
+  }
 
   void _addDraft() {
     setState(() => _drafts.add(MerchantDraft()));
@@ -132,7 +166,6 @@ class _StadiumMerchantsScreenState
         isSubmitting = false;
         _drafts.clear();
       });
-
       showSuccessSnackBar(context: context, message: "Merchants registered.");
     } catch (e) {
       if (!mounted) return;
@@ -148,8 +181,13 @@ class _StadiumMerchantsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Merchants"),
+        title: Text(
+          merchantsAsync.hasValue && merchantsAsync.value!.isNotEmpty
+              ? "${merchantsAsync.value!.length} Merchants"
+              : "Merchants",
+        ),
         actions: [
+          _buildInfoButton(),
           TextButton.icon(
             onPressed:
                 isSubmitting || !isChanged || merchantsAsync.value == null
@@ -215,17 +253,21 @@ class _StadiumMerchantsScreenState
                     child: child,
                   ),
                 ),
+                // The warning is not the user's to close: a stadium with no
+                // number that works cannot be paid, and has to keep saying so.
+                // Only the panel explaining the screen answers to _showInfo.
                 child: _hasNoActiveMerchant(merchants)
                     ? _buildNoActiveMerchantWarning(
                         merchants.isEmpty,
                         key: ValueKey('warning-${merchants.isEmpty}'),
                       )
-                    : _buildHeader(context, key: const ValueKey('header')),
+                    : _showInfo
+                    ? _buildHeader(context, key: const ValueKey('header'))
+                    : const SizedBox.shrink(key: ValueKey('none')),
               ),
             ),
-            const SizedBox(height: 20),
+
             if (merchants.isNotEmpty) ...[
-              _buildNewCounterTitle("Registered", merchants.length),
               for (final merchant in merchants)
                 RefreshIndicator(
                   onRefresh: () async =>
@@ -308,7 +350,7 @@ class _StadiumMerchantsScreenState
     );
   }
 
-   Widget _buildHeader(BuildContext context, {Key? key}) {
+  Widget _buildHeader(BuildContext context, {Key? key}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -359,6 +401,11 @@ class _StadiumMerchantsScreenState
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                onPressed: _toggleInfo,
+                tooltip: "Close",
+                icon: Icon(Symbols.close, color: colorScheme.onSurfaceVariant),
               ),
             ],
           ),
