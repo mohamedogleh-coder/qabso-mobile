@@ -133,6 +133,10 @@ class EventBookingService {
   /// [onBusy] brackets the write, so each caller can render waiting its own
   /// way — an inline spinner on a button, or the app's loading dialog — and is
   /// always cleared before any dialog appears on top of it.
+  ///
+  /// [refreshSlots] reloads the grid as soon as the booking is written, which
+  /// is what every caller wants. Pass false when the caller shows something
+  /// over the grid first and wants to reload it in its own time.
   static Future<int?> book({
     required BuildContext context,
     required WidgetRef ref,
@@ -142,6 +146,7 @@ class EventBookingService {
     required bool isHalfBooking,
     String? eventKey,
     ValueChanged<bool>? onBusy,
+    bool refreshSlots = true,
   }) async {
     final appUser = currentUser(ref);
 
@@ -202,7 +207,9 @@ class EventBookingService {
       );
 
       // The grid is what tells everyone else the slot is gone.
-      ref.invalidate(eventTimeSlotsProvider(booking.fieldId));
+      if (refreshSlots) {
+        ref.invalidate(eventTimeSlotsProvider(booking.fieldId));
+      }
     } catch (e) {
       failure = e;
     } finally {

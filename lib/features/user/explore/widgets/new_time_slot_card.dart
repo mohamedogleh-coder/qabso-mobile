@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/auth/app_user_model.dart';
 import 'package:qabso_mobile/features/auth/app_user_notifer.dart';
+import 'package:qabso_mobile/features/manager/events/event_booking_service.dart';
+import 'package:qabso_mobile/features/manager/events/event_notifier_provider.dart';
 import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
+import 'package:qabso_mobile/utill/app_dailogs.dart';
 
 class NewTimeSlotCard extends ConsumerWidget {
   final BookingContextModel booking;
@@ -26,7 +29,7 @@ class NewTimeSlotCard extends ConsumerWidget {
     if (role == null) return;
     switch (role) {
       case AppUserRole.manager:
-        _onManagerTap(context);
+        _onManagerTap(context, ref);
       case AppUserRole.user:
         _onUserTap(context);
       case AppUserRole.referee:
@@ -34,7 +37,69 @@ class NewTimeSlotCard extends ConsumerWidget {
     }
   }
 
-  void _onManagerTap(BuildContext context) {}
+  Future<void> _onManagerTap(BuildContext context, WidgetRef ref) async {
+    if (!slotModel.isAvailable) return;
+
+    final payment = await EventBookingService.collectPayment(
+      context: context,
+      ref: ref,
+      booking: booking,
+      slot: slotModel,
+      amount: EventBookingService.amountDue(
+        slotPrice: booking.slotPrice,
+        isHalfBooking: false,
+      ),
+    );
+
+    if (payment == null || !context.mounted) return;
+
+    final eventId = await EventBookingService.book(
+      context: context,
+      ref: ref,
+      booking: booking,
+      slot: slotModel,
+      payment: payment,
+      isHalfBooking: false,
+      onBusy: (busy) => _showBusy(context, busy),
+      refreshSlots: false,
+    );
+
+    if (eventId == null || !context.mounted) return;
+
+    await _showBookingDoneDialog(context, ref);
+  }
+
+  void _showBusy(BuildContext context, bool busy) {
+    if (busy) {
+      showAppLoadingDialog(context: context, message: "Booking...");
+      return;
+    }
+    hideAppLoadingDialog(context);
+  }
+
+  Future<void> _showBookingDoneDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final bookAnother = await showAppConfirmationDialog(
+      context: context,
+      icon: Symbols.check_circle,
+      title: "Booked Successfully",
+      message:
+          "Waqtigaagu waa ${slotModel.label}. Fadlan usheeg in ay wakhtiga ilashaan ciyaarayashu insha Alah"
+          "aadan u seegin.",
+      confirmText: "Book new event",
+      cancelText: "Thanks",
+    );
+
+    if (bookAnother) {
+      ref.invalidate(eventTimeSlotsProvider(booking.fieldId));
+    } else {
+      if (context.mounted) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
+    }
+  }
 
   void _onUserTap(BuildContext context) {}
 

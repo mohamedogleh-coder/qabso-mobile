@@ -71,6 +71,7 @@ Future<bool> showAppConfirmationDialog({
   IconData? icon,
   bool barrierDismissible = true,
   Future<void> Function()? onConfirm,
+  Future<void> Function()? onCancel
 }) async {
   final result = await showDialog<bool>(
     context: context,
