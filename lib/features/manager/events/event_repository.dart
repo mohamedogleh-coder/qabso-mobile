@@ -225,6 +225,26 @@ class EventRepository {
   ///
   /// A rule the database refuses comes back as a [PostgrestException] carrying
   /// its message, which callers show as-is.
+  /// Moves a booking to another hour on the same field and returns its id.
+  ///
+  /// Every booking rule for the new hour is checked by the database, so
+  /// nothing is checked here. A rule it refuses comes back as a
+  /// PostgrestException carrying its own message for the manager.
+  static Future<int> rescheduleEvent({
+    required int eventId,
+    required DateTime startTime,
+  }) async {
+    final rescheduledId = await _client.rpc(
+      'reschedule_event_fn',
+      params: {
+        'p_event_id': eventId,
+        'p_start_time': AppDateUtil.formatDateTime(startTime),
+      },
+    );
+
+    return rescheduledId as int;
+  }
+
   static Future<int> bookEvent({
     required int fieldId,
     required DateTime eventStart,

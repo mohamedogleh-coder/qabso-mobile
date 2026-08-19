@@ -9,6 +9,7 @@ import 'package:qabso_mobile/features/manager/events/event_notifier_provider.dar
 import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/event_details_sheet.dart';
+import 'package:qabso_mobile/features/manager/events/widgets/reschedule_event_widget.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
 
 class NewTimeSlotCard extends ConsumerWidget {
@@ -40,7 +41,7 @@ class NewTimeSlotCard extends ConsumerWidget {
 
   Future<void> _onManagerTap(BuildContext context, WidgetRef ref) async {
     if (slotModel.eventStatus == EventStatus.confirmed) {
-      await _openConfirmedSlotOptions(context);
+      await _openConfirmedSlotOptions(context, ref);
       return;
     }
 
@@ -79,7 +80,10 @@ class NewTimeSlotCard extends ConsumerWidget {
   ///
   /// Only the first option works today. The other two say so instead of
   /// doing nothing, so the manager knows the tap was heard.
-  Future<void> _openConfirmedSlotOptions(BuildContext context) async {
+  Future<void> _openConfirmedSlotOptions(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final eventId = slotModel.eventId;
     if (eventId == null) return;
 
@@ -114,7 +118,7 @@ class NewTimeSlotCard extends ConsumerWidget {
               description: "Beddel waqtiga event-kan oo u qorshee waqti kale.",
               onTap: () {
                 Navigator.pop(sheetContext);
-                showNotImplementedDialog(context: context);
+                _openReschedule(context, ref);
               },
             ),
             const Divider(height: 1, indent: 20, endIndent: 20),
@@ -133,6 +137,98 @@ class NewTimeSlotCard extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  /// Opens the sheet where the manager picks a new hour, then says how it
+  /// went. Nothing is shown when they close the sheet without moving it.
+  Future<void> _openReschedule(BuildContext context, WidgetRef ref) async {
+    final newSlot = await RescheduleEventWidget.show(
+      context,
+      fieldId: booking.fieldId,
+      currentSlot: slotModel,
+    );
+
+    if (newSlot == null || !context.mounted) return;
+
+    await _showRescheduleDoneDialog(context, ref, newSlot);
+  }
+
+  /// Tells the manager the booking moved, and asks where to go next. Staying
+  /// reloads the grid so the hour shows in its new place.
+  Future<void> _showRescheduleDoneDialog(
+    BuildContext context,
+    WidgetRef ref,
+    TimeSlotModel newSlot,
+  ) async {
+    final theme = Theme.of(context);
+
+    final stayHere = await showAppConfirmationDialog(
+      context: context,
+      icon: Symbols.event_available,
+      title: "Waqtiga waa la beddelay",
+      confirmText: "Stay Bookings",
+      cancelText: "Go to Home",
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Event-kan waxaa loo wareejiyay waqti cusub.",
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildTimeChange(theme, newSlot),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (stayHere) {
+      ref.invalidate(eventTimeSlotsProvider(booking.fieldId));
+      return;
+    }
+
+    Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
+  /// The old hour, an arrow, then the new one, so the change is read at once.
+  Widget _buildTimeChange(ThemeData theme, TimeSlotModel newSlot) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(
+          child: Text(
+            slotModel.label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              decoration: TextDecoration.lineThrough,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Icon(
+            Symbols.arrow_forward,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Flexible(
+          child: Text(
+            newSlot.label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -228,7 +324,7 @@ class NewTimeSlotCard extends ConsumerWidget {
       trailing: Icon(
         Symbols.chevron_right,
         size: 20,
-        color: theme.colorScheme.outline,
+        color: theme.hintColor.withValues(alpha: 0.5),
       ),
     );
   }
