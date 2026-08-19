@@ -211,7 +211,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       controller: _phoneController,
       label: "Taleefankaaga",
       prefixIcon: Symbols.call,
-      capitalize: false,
+      capitalization: TextCapitalization.none,
       enabled: !_isSaving,
       keyboardType: TextInputType.phone,
       maxLength: 20,

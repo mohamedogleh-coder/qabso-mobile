@@ -8,6 +8,7 @@ import 'package:qabso_mobile/features/manager/events/event_booking_service.dart'
 import 'package:qabso_mobile/features/manager/events/event_notifier_provider.dart';
 import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
+import 'package:qabso_mobile/features/manager/events/widgets/cancel_event_widget.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/event_details_sheet.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/reschedule_event_widget.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
@@ -130,7 +131,11 @@ class NewTimeSlotCard extends ConsumerWidget {
               description: "Jooji booking-kan, lacagtana u celi macmiilka",
               onTap: () {
                 Navigator.pop(sheetContext);
-                showNotImplementedDialog(context: context);
+                CancelEventWidget.show(
+                  context,
+                  eventId: eventId,
+                  fieldId: booking.fieldId,
+                );
               },
             ),
             const SizedBox(height: 12),

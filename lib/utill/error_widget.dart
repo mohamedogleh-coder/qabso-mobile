@@ -14,10 +14,13 @@ class ErrorRetryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return onErrorTryAgain(
-      context: context,
-      errorMessage: errorMessage,
-      onRetry: onRetry,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: MediaQuery.heightOf(context)*0.5),
+      child: onErrorTryAgain(
+        context: context,
+        errorMessage: errorMessage,
+        onRetry: onRetry,
+      ),
     );
   }
 

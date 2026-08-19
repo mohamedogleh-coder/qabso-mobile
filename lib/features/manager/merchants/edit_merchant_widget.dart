@@ -144,8 +144,7 @@ class _EditMerchantWidgetState extends ConsumerState<EditMerchantWidget> {
                 prefixIcon: Symbols.dialpad,
                 value: _merchantNumber,
                 enabled: !isSubmitting,
-                capitalize: false,
-                maxLength: 20,
+                 maxLength: 20,
                 counterText: "",
                 keyboardType: TextInputType.phone,
                 inputFormatters: [

@@ -22,7 +22,7 @@ class AppInputTextWidget extends StatefulWidget {
   final String? counterText;
   final String? helperText;
   final String? value;
-  final bool capitalize;
+  final TextCapitalization capitalization;
   final double verticalPadding;
   final TextAlign? textAlign;
   final List<TextInputFormatter>? inputFormatters;
@@ -52,7 +52,7 @@ class AppInputTextWidget extends StatefulWidget {
     this.filledColor,
     this.textAlign,
     this.errorFontSize,
-    this.capitalize = true,
+    this.capitalization = TextCapitalization.sentences,
   });
 
   @override
@@ -72,9 +72,7 @@ class _AppInputTextWidgetState extends State<AppInputTextWidget> {
         controller: widget.controller,
         keyboardType: widget.keyboardType,
         textAlign: widget.textAlign ?? TextAlign.start,
-        textCapitalization: widget.capitalize?
-             TextCapitalization.sentences
-            : TextCapitalization.none,
+        textCapitalization: widget.capitalization,
         obscureText: widget.obscureText && !showHideToggle,
         enabled: widget.enabled,
         focusNode: widget.focusNode,

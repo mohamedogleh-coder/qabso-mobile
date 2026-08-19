@@ -142,7 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _emailController,
                     label: 'Email',
                     hintText: 'you@example.com',
-                    capitalize: false,
+                    capitalization: TextCapitalization.none,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.email_outlined,

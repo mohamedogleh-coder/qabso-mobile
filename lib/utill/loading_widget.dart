@@ -5,6 +5,11 @@ class LoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.heightOf(context) * 0.2,
+      ),
+      child: const Center(child: CircularProgressIndicator()),
+    );
   }
 }

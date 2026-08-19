@@ -280,8 +280,7 @@ class _UpdateExpanseScreenState extends ConsumerState<UpdateExpanseScreen> {
       label: "Qiimaha lacagta",
       hintText: "0.00",
       prefixIcon: Symbols.attach_money,
-      capitalize: false,
-      enabled: !_isSaving,
+       enabled: !_isSaving,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),

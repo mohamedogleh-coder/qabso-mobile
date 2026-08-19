@@ -68,10 +68,7 @@ class EventRepository {
     required int eventId,
   }) async {
     final rows =
-        await _client.rpc(
-              'event_details_fn',
-              params: {'p_event_id': eventId},
-            )
+        await _client.rpc('event_details_fn', params: {'p_event_id': eventId})
             as List;
 
     if (rows.isEmpty) {
@@ -230,6 +227,81 @@ class EventRepository {
   /// Every booking rule for the new hour is checked by the database, so
   /// nothing is checked here. A rule it refuses comes back as a
   /// PostgrestException carrying its own message for the manager.
+  /// Cancels a booking, hands back the money taken for it, and returns its id.
+  ///
+  /// The whole paid amount goes back. `cancel_event_fn` refuses anything else,
+  /// so the refund must be exactly what the booking paid, split across
+  /// merchants and cash the way a payment is. The split is added up here, so
+  /// the total and the portions can never disagree.
+  ///
+  /// [processedBy] is the staff member handing the money out. Money going out
+  /// never records a customer, which chk_transaction_actors enforces.
+  ///
+  /// A rule the database refuses comes back as a [PostgrestException] carrying
+  /// its message, which callers show as-is.
+  /// What a booking has paid, read before a cancellation so the refund sheet
+  /// opens on the amount `cancel_event_fn` will accept.
+  ///
+  /// It is the money that actually changed hands: every payment less the
+  /// discount it was given. A booking with no payments comes back as 0.
+  static Future<double> getPaidAmount({required int eventId}) async {
+    final paidAmount = await _client.rpc(
+      'event_paid_amount_fn',
+      params: {'p_event_id': eventId},
+    );
+
+    return (paidAmount as num).toDouble();
+  }
+
+  static Future<int> cancelEvent({
+    required int eventId,
+    required String processedBy,
+    required List<PaymentAllocationModel> refunds,
+    required String description,
+  }) async {
+    if (refunds.isEmpty) {
+      throw ArgumentError.value(
+        refunds,
+        'refunds',
+        'At least one refund is required.',
+      );
+    }
+
+    if (refunds.any((refund) => refund.amountPaid <= 0)) {
+      throw ArgumentError.value(
+        refunds,
+        'refunds',
+        'Every refund must be greater than zero.',
+      );
+    }
+
+    if (description.trim().isEmpty) {
+      throw ArgumentError.value(
+        description,
+        'description',
+        'A reason for the cancellation is required.',
+      );
+    }
+
+    final refundAmount = refunds.fold<double>(
+      0,
+      (total, refund) => total + refund.amountPaid,
+    );
+
+    final cancelledId = await _client.rpc(
+      'cancel_event_fn',
+      params: {
+        'p_event_id': eventId,
+        'p_processed_by': processedBy,
+        'p_refund_amount': refundAmount,
+        'p_merchants': refunds.map((refund) => refund.toJson()).toList(),
+        'p_description': description.trim(),
+      },
+    );
+
+    return cancelledId as int;
+  }
+
   static Future<int> rescheduleEvent({
     required int eventId,
     required DateTime startTime,
