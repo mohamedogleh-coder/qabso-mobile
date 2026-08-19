@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:qabso_mobile/features/manager/events/event_notifier_provider.dart';
 import 'package:qabso_mobile/features/manager/events/models/booking_context_model.dart';
-import 'package:qabso_mobile/features/manager/events/time_slot_card_widget.dart';
+import 'package:qabso_mobile/features/user/explore/widgets/new_time_slot_card.dart';
 import 'package:qabso_mobile/utill/app_utility_service.dart';
 import 'package:qabso_mobile/utill/error_widget.dart';
 import 'package:qabso_mobile/utill/loading_widget.dart';
@@ -84,7 +84,7 @@ class _TimeSlotsListWidgetState extends ConsumerState<TimeSlotsListWidget> {
               runSpacing: 4,
               children: slots
                   .map(
-                    (slot) => TimeSlotCardWidget(
+                    (slot) => NewTimeSlotCard(
                       booking: widget.booking,
                       slotModel: slot,
                     ),
