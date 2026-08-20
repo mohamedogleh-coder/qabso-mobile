@@ -309,6 +309,7 @@ Future<void> _showIconAlertDialog({
   required IconData icon,
   required Color iconColor,
   required String buttonText,
+  Widget? content,
   VoidCallback? onButtonPressed,
   bool barrierDismissible = true,
 }) {
@@ -345,6 +346,7 @@ Future<void> _showIconAlertDialog({
                 height: 1.5,
               ),
             ),
+            if (content != null) ...[const SizedBox(height: 16), content],
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
@@ -374,6 +376,7 @@ Future<void> showInformationDialog({
   String title = "Information",
   IconData icon = Symbols.info_rounded,
   String buttonText = "Got it",
+  Widget? content,
   VoidCallback? onButtonPressed,
   bool barrierDismissible = true,
 }) {
@@ -384,6 +387,7 @@ Future<void> showInformationDialog({
     icon: icon,
     iconColor: Theme.of(context).colorScheme.primary,
     buttonText: buttonText,
+    content: content,
     onButtonPressed: onButtonPressed,
     barrierDismissible: barrierDismissible,
   );

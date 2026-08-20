@@ -11,6 +11,9 @@ import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/cancel_event_widget.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/event_details_sheet.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/reschedule_event_widget.dart';
+import 'package:qabso_mobile/payments/payment_allocation_model.dart';
+import 'package:qabso_mobile/payments/payment_result.dart';
+import 'package:qabso_mobile/payments/user_payment_widget.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -38,7 +41,7 @@ class NewTimeSlotCard extends ConsumerWidget {
       case AppUserRole.manager:
         _onManagerTap(context, ref);
       case AppUserRole.user:
-        _onUserTap(context);
+        _onUserTap(context, ref);
       case AppUserRole.referee:
         break;
     }
@@ -128,9 +131,9 @@ class NewTimeSlotCard extends ConsumerWidget {
               theme: theme,
               icon: Symbols.receipt_long,
               color: theme.colorScheme.primary,
-              title: "Event Info",
+              title: "Event Information",
               description: "Eeg faahfaahinta event-kan iyo xogta booking-ka.",
-              isPrimary: true,
+              // isPrimary: true,
               onTap: () {
                 Navigator.pop(sheetContext);
                 EventDetailsSheet.show(context, eventId: eventId);
@@ -141,7 +144,7 @@ class NewTimeSlotCard extends ConsumerWidget {
               _buildActionTile(
                 theme: theme,
                 icon: Symbols.call,
-                color: theme.colorScheme.secondary,
+                color: Colors.brown,
                 title: "Call Booked User",
                 description:
                     "Wac qofka qabsaday event-kan: "
@@ -382,7 +385,7 @@ class NewTimeSlotCard extends ConsumerWidget {
         child: Text(
           description,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            color: theme.hintColor.withValues(alpha: 0.9),
           ),
         ),
       ),
@@ -440,7 +443,7 @@ class NewTimeSlotCard extends ConsumerWidget {
   ///
   /// Their own booking opens. Somebody else's only says it is taken. An hour
   /// nobody took and that has gone by says so.
-  void _onUserTap(BuildContext context) {
+  void _onUserTap(BuildContext context, WidgetRef ref) {
     final eventId = slotModel.eventId;
 
     if (slotModel.isMine && eventId != null) {
@@ -464,7 +467,76 @@ class NewTimeSlotCard extends ConsumerWidget {
       return;
     }
 
-    // The customer booking flow is not built yet.
+    _bookSlot(context, ref);
+  }
+
+  /// Takes the customer's payment and books the hour.
+  ///
+  /// The sheet stays open until the booking is written, so the waiting and
+  /// any error are shown on the sheet itself. It closes only once the hour is
+  /// theirs.
+  Future<void> _bookSlot(BuildContext context, WidgetRef ref) async {
+    final booked = await showAppBottomSheet<bool>(
+      context: context,
+      title: slotModel.label,
+      builder: (sheetContext) => UserPaymentWidget(
+        stadiumId: booking.stadiumId,
+        requiredAmount: EventBookingService.amountDue(
+          slotPrice: booking.slotPrice,
+          isHalfBooking: false,
+        ),
+        timeSlotModel: slotModel,
+        onSubmit: (payment) => _payAndBook(sheetContext, ref, payment),
+      ),
+    );
+
+    if (booked != true || !context.mounted) return;
+
+    await _showTimeKeptDialog(context);
+  }
+
+  /// Writes the booking from inside the payment sheet. A failure leaves the
+  /// sheet open with its own dialog on top, so the customer can try again.
+  Future<void> _payAndBook(
+    BuildContext sheetContext,
+    WidgetRef ref,
+    PaymentAllocationModel allocation,
+  ) async {
+    final eventId = await EventBookingService.book(
+      context: sheetContext,
+      ref: ref,
+      booking: booking,
+      slot: slotModel,
+      payment: PaymentResult(
+        requiredAmount: allocation.amountPaid,
+        allocations: [allocation],
+      ),
+      isHalfBooking: false,
+      refreshSlots: false,
+    );
+
+    if (eventId == null || !sheetContext.mounted) return;
+
+    Navigator.pop(sheetContext, true);
+  }
+
+  /// Tells the customer the hour is theirs, then takes them home. The grid
+  /// they came from disposes itself on the way out, so there is nothing to
+  /// reload.
+  Future<void> _showTimeKeptDialog(BuildContext context) async {
+    await showInformationDialog(
+      context: context,
+      icon: Symbols.event_available,
+      title: "Waqtigaaga waa la qabsaday",
+      message: "Fadlan ha seegin, oo garoonka ku timaw waqtigaas.",
+      content: _buildTimeChip(Theme.of(context)),
+      buttonText: "Thanks",
+      barrierDismissible: false,
+    );
+
+    if (!context.mounted) return;
+
+    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   BoxDecoration _buildDecoration(ThemeData theme) {

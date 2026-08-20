@@ -114,7 +114,7 @@ class EventBookingService {
         stadiumId: booking.stadiumId,
         requiredAmount: amount,
         timeSlotModel: slot,
-        onSubmit: (payment) => Navigator.pop(sheetContext, payment),
+        onSubmit: (payment) async => Navigator.pop(sheetContext, payment),
       ),
     );
 

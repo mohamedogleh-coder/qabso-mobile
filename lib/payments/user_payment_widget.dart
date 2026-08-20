@@ -25,8 +25,9 @@ class UserPaymentWidget extends StatefulWidget {
   final TimeSlotModel timeSlotModel;
 
   /// Called with the chosen merchant and the full required amount, once and
-  /// only once a merchant has been selected.
-  final ValueChanged<PaymentAllocationModel> onSubmit;
+  /// only once a merchant has been selected. The sheet waits for it, so the
+  /// parent can book the slot while the button shows that it is working.
+  final Future<void> Function(PaymentAllocationModel) onSubmit;
 
   const UserPaymentWidget({
     super.key,
@@ -48,6 +49,10 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
   late Future<List<StadiumMerchantModel>> _merchantsFuture;
 
   StadiumMerchantModel? _selectedMerchant;
+
+  /// True while the parent is booking. The sheet stays open, so an error can
+  /// be shown over it and the customer can try another merchant.
+  bool _isPaying = false;
 
   @override
   void initState() {
@@ -74,16 +79,22 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
 
   bool get _canPay => _selectedMerchant != null && widget.requiredAmount > 0;
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     final merchant = _selectedMerchant;
-    if (merchant == null || !_canPay) return;
+    if (merchant == null || !_canPay || _isPaying) return;
 
-    widget.onSubmit(
-      PaymentAllocationModel(
-        merchant: merchant,
-        amountPaid: widget.requiredAmount,
-      ),
-    );
+    setState(() => _isPaying = true);
+
+    try {
+      await widget.onSubmit(
+        PaymentAllocationModel(
+          merchant: merchant,
+          amountPaid: widget.requiredAmount,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isPaying = false);
+    }
   }
 
   @override
@@ -150,7 +161,9 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => setState(() => _selectedMerchant = merchant),
+      onTap: _isPaying
+          ? null
+          : () => setState(() => _selectedMerchant = merchant),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
@@ -259,9 +272,19 @@ class _UserPaymentWidgetState extends State<UserPaymentWidget> {
     return SizedBox(
       width: double.infinity,
       child: FilledButton.icon(
-        onPressed: _canPay ? _handleSubmit : null,
-        icon: const Icon(Symbols.payments),
-        label: Text("Pay Now  \$${widget.requiredAmount.toStringAsFixed(2)}"),
+        onPressed: _canPay && !_isPaying ? _handleSubmit : null,
+        icon: _isPaying
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Symbols.payments),
+        label: Text(
+          _isPaying
+              ? "Booking..."
+              : "Pay Now  \$${widget.requiredAmount.toStringAsFixed(2)}",
+        ),
       ),
     );
   }
