@@ -24,7 +24,9 @@ final ThemeData lightTheme = ThemeData(
     surface: AppConstants.lightSurface,
     onSurface: AppConstants.lightTextPrimary,
 
-    surfaceContainerHighest: AppConstants.lightBackground,
+    // A step below the page, so a filled block — a free time slot — is
+    // still seen on it.
+    surfaceContainerHighest: AppConstants.lightBorder,
 
     outline: AppConstants.lightBorder,
 

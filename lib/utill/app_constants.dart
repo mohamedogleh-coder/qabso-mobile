@@ -10,7 +10,10 @@ abstract class AppConstants {
   static const Color primaryHover = Color(0xFF32A169);
   static const Color primaryTint = Color(0xFF133E2B);
 
-  static const Color lightBackground = Color(0xFFF9F8F8);
+  /// The page behind everything. A step below [lightSurface] so a white
+  /// card and the app bar are seen against it, the way [darkSurface] is seen
+  /// against [darkBackground].
+  static const Color lightBackground = Color(0xFFF1F5F9);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightTextPrimary = Color(0xFF0F172A);
   static const Color lightTextMuted = Color(0xFF64748B);
