@@ -98,161 +98,134 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
 
   Widget _buildDetails(EventDetailsModel details) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSheetTitle(),
+          _buildHeader(details),
           const SizedBox(height: 16),
+          _buildWhenAndWhat(details),
+          const Divider(height: 32),
           _buildBooking(details),
-          const SizedBox(height: 16),
+          const Divider(height: 32),
           _buildReceipt(details),
         ],
       ),
     );
   }
 
-  Widget _buildSheetTitle() {
-    final theme = Theme.of(context);
-
-    return Row(
-      children: [
-        IconButton.outlined(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Symbols.close),
-        ),
-        const SizedBox(width: 12),
-        Text("Faahfaahinta bookingka", style: theme.textTheme.headlineMedium),
-      ],
-    );
-  }
-
-  // ---------------------------------------------------------------------
-  // The booking
-  // ---------------------------------------------------------------------
-
-  /// Where the game is played, when, and what it costs.
-  ///
-  /// It opens with the stadium, the state of the booking and the price of the
-  /// slot, so the three things asked first are answered before any reading.
-  /// The facts below fill in the rest.
-  Widget _buildBooking(EventDetailsModel details) {
-    final theme = Theme.of(context);
-
-    return _buildSection(
-      icon: Symbols.stadium,
-      accent: theme.colorScheme.primary,
-      title: "Macluumaadka bookingka",
-      child: Column(
-        children: [
-          _buildStadiumRow(details),
-          const Divider(height: 24),
-          _buildFactRow(
-            icon: Symbols.calendar_month,
-            label: "Taariikhda",
-            value: AppDateUtil.formatReadableDate(details.eventStart),
-          ),
-          _buildFactRow(
-            icon: Symbols.schedule,
-            label: "Waqtiga",
-            value: AppDateUtil.formatSlot(details.eventStart, details.eventEnd),
-          ),
-          if (details.extraTime > 0)
-            _buildFactRow(
-              icon: Symbols.more_time,
-              label: "Waqti dheeraad ah",
-              value: "${details.extraTime} daqiiqo",
-            ),
-          _buildFactRow(
-            icon: Symbols.person,
-            label: "Qiimaha ciyaartoyga",
-            value: _money(details.cost),
-          ),
-          if (details.isPrivate)
-            _buildFactRow(
-              icon: Symbols.lock,
-              label: "Code-ka gaarka ah",
-              value: details.eventKey!,
-            ),
-          if (details.cancelledAt != null)
-            _buildFactRow(
-              icon: Symbols.cancel,
-              label: "Waa la joojiyay",
-              value: AppDateUtil.formatDateTime(details.cancelledAt!),
-              valueColor: AppConstants.error,
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// The stadium, the state of the booking, the field it is on, and the price
-  /// of the whole slot.
-  Widget _buildStadiumRow(EventDetailsModel details) {
+  /// The stadium and the state of the booking, with the way out on the right.
+  Widget _buildHeader(EventDetailsModel details) {
     final theme = Theme.of(context);
     final color = details.eventStatus.color;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Symbols.stadium,
+            color: Colors.white,
+            fill: 1,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      details.stadiumName,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildStatusPill(color, details.eventStatus.label),
-                ],
-              ),
-              const SizedBox(height: 4),
               Text(
-                "Field #${details.fieldId} · ${details.capacity} ciyaartoy",
+                details.stadiumName,
+                style: theme.textTheme.headlineLarge,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                details.eventStatus.label,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: color,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        Text(
-          _money(details.slotPrice),
-          style: theme.textTheme.headlineLarge?.copyWith(
-            color: theme.colorScheme.primary,
-          ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          tooltip: "Xir",
+          icon: const Icon(Symbols.close),
         ),
       ],
     );
   }
 
-  Widget _buildStatusPill(Color color, String label) {
-    final theme = Theme.of(context);
+  /// When the game is and what the slot costs, as one strip. The three facts
+  /// asked first, answered before any reading.
+  Widget _buildWhenAndWhat(EventDetailsModel details) {
+    return _buildStatStrip([
+      _buildStat(
+        icon: Symbols.calendar_month,
+        label: "Taariikhda",
+        value: AppDateUtil.formatDate(details.eventStart, pattern: 'dd MMM'),
+      ),
+      _buildStat(
+        icon: Symbols.schedule,
+        label: "Waqtiga",
+        value: AppDateUtil.formatSlot(details.eventStart, details.eventEnd),
+      ),
+      _buildStat(
+        icon: Symbols.payments,
+        label: "Qiimaha",
+        value: _money(details.slotPrice),
+      ),
+    ]);
+  }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.3,
+  // ---------------------------------------------------------------------
+  // The booking
+  // ---------------------------------------------------------------------
+
+  /// The rest of what the booking is made of, under the strip that already
+  /// gave its day, its hour and its price.
+  Widget _buildBooking(EventDetailsModel details) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(
+          icon: Symbols.event,
+          title: "Macluumaadka bookingka",
         ),
-      ),
+        const SizedBox(height: 12),
+        _buildFactRow(
+          label: "Field-ka",
+          value: "#${details.fieldId} · ${details.capacity} ciyaartoy",
+        ),
+        _buildFactRow(
+          label: "Qiimaha ciyaartoyga",
+          value: _money(details.cost),
+        ),
+        if (details.extraTime > 0)
+          _buildFactRow(
+            label: "Waqti dheeraad ah",
+            value: "${details.extraTime} daqiiqo",
+          ),
+        if (details.isPrivate)
+          _buildFactRow(label: "Code-ka gaarka ah", value: details.eventKey!),
+        if (details.cancelledAt != null)
+          _buildFactRow(
+            label: "Waa la joojiyay",
+            value: AppDateUtil.formatDateTime(details.cancelledAt!),
+            valueColor: AppConstants.error,
+          ),
+      ],
     );
   }
 
@@ -262,28 +235,38 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
 
   /// Every payment and refund taken on the booking, then what they come to.
   ///
-  /// It is laid out like a paper receipt: the movements in the order they
-  /// happened, a rule, then the totals. What is still owed is the last line,
-  /// because it is the one a manager is looking for.
+  /// The movements read in the order they happened, and the totals sit in
+  /// their own block at the end, the way the matched field is set apart on
+  /// the stadium sheet.
   Widget _buildReceipt(EventDetailsModel details) {
-    final theme = Theme.of(context);
-    final transactions = details.transactions;
-
-    return _buildSection(
-      icon: Symbols.receipt_long,
-      accent: theme.colorScheme.tertiary,
-      title: "Rasiidka",
-      child: Column(
-        children: [
-          if (transactions.isEmpty) _buildNoPayments(),
-          for (var index = 0; index < transactions.length; index++) ...[
-            if (index > 0) const Divider(height: 24),
-            _buildTransaction(transactions[index]),
-          ],
-          const Divider(height: 28, thickness: 1),
-          _buildTotals(details),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(icon: Symbols.receipt_long, title: "Rasiidka"),
+        const SizedBox(height: 12),
+        if (details.transactions.isEmpty) _buildNoPayments(),
+        for (var index = 0; index < details.transactions.length; index++) ...[
+          if (index > 0) const Divider(height: 24),
+          _buildTransaction(details.transactions[index]),
         ],
-      ),
+        if (details.discounted > 0 || details.refunded > 0) ...[
+          const SizedBox(height: 16),
+          if (details.discounted > 0)
+            _buildFactRow(
+              label: "Qiimo dhimis",
+              value: "-${_money(details.discounted)}",
+              valueColor: AppConstants.warning,
+            ),
+          if (details.refunded > 0)
+            _buildFactRow(
+              label: "Lacagta la celiyay",
+              value: "-${_money(details.refunded)}",
+              valueColor: AppConstants.error,
+            ),
+        ],
+        const SizedBox(height: 16),
+        _buildTotals(details),
+      ],
     );
   }
 
@@ -294,7 +277,7 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
       children: [
         Icon(
           Symbols.receipt,
-          size: 20,
+          size: 18,
           color: theme.colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: 8),
@@ -329,11 +312,21 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildRoundIcon(
-              transaction.isRefund ? Symbols.undo : Symbols.check,
-              color,
+            Container(
+              height: 34,
+              width: 34,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                transaction.isRefund ? Symbols.undo : Symbols.check,
+                size: 18,
+                fill: 1,
+                color: color,
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +340,9 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
                   const SizedBox(height: 2),
                   Text(
                     AppDateUtil.formatDateTime(transaction.transactionDate),
-                    style: theme.textTheme.labelMedium,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -355,14 +350,11 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
             const SizedBox(width: 8),
             Text(
               amount,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+              style: theme.textTheme.headlineMedium?.copyWith(color: color),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         _buildPayer(transaction),
         if (transaction.hasDiscount) ...[
           const SizedBox(height: 6),
@@ -385,20 +377,29 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
     final phone = transaction.paidUserPhone;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 42),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(left: 46),
+      child: Row(
         children: [
-          Text(
-            transaction.paidUserName != null
-                ? "Waxaa bixiyay ${transaction.payerName}"
-                : "Waxaa qaatay ${transaction.payerName}",
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          Icon(
+            Symbols.person,
+            size: 16,
+            fill: 1,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              transaction.paidUserName != null
+                  ? "Waxaa bixiyay ${transaction.payerName}"
+                  : "Waxaa qaatay ${transaction.payerName}",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (phone != null) ...[
-            const SizedBox(height: 2),
+            const SizedBox(width: 8),
             Text(phone, style: theme.textTheme.labelMedium),
           ],
         ],
@@ -410,10 +411,10 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(left: 42),
+      padding: const EdgeInsets.only(left: 46),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+          Icon(icon, size: 16, fill: 1, color: theme.colorScheme.primary),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -433,11 +434,11 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.only(left: 42),
+      margin: const EdgeInsets.only(left: 46),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
@@ -484,48 +485,43 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
     );
   }
 
-  /// What the booking came to, and where it stands now.
+  /// What the booking came to, set apart in its own block because it is the
+  /// answer a manager opens this sheet for.
   Widget _buildTotals(EventDetailsModel details) {
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        _buildFactRow(
-          label: "Wadarta lacagta",
+    final remainingColor = details.hasRemaining
+        ? AppConstants.warning
+        : AppConstants.success;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: .06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: .3),
+        ),
+      ),
+      child: _buildStatStrip([
+        _buildStat(
+          icon: Symbols.receipt_long,
+          label: "Wadarta",
           value: _money(details.billedAmount),
         ),
-        if (details.discounted > 0)
-          _buildFactRow(
-            label: "Qiimo dhimis",
-            value: "-${_money(details.discounted)}",
-            valueColor: AppConstants.warning,
-          ),
-        _buildFactRow(
-          label: "Lacagta la bixiyay",
+        _buildStat(
+          icon: Symbols.check_circle,
+          label: "La bixiyay",
           value: _money(details.paidAmount),
         ),
-        if (details.refunded > 0)
-          _buildFactRow(
-            label: "Lacagta la celiyay",
-            value: "-${_money(details.refunded)}",
-            valueColor: AppConstants.error,
-          ),
-        const Divider(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Lacagta hadhay", style: theme.textTheme.headlineMedium),
-            Text(
-              _money(details.remaining),
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: details.hasRemaining
-                    ? AppConstants.warning
-                    : AppConstants.success,
-              ),
-            ),
-          ],
+        _buildStat(
+          icon: Symbols.account_balance_wallet,
+          label: "Hadhay",
+          value: _money(details.remaining),
+          valueColor: remainingColor,
         ),
-      ],
+      ]),
     );
   }
 
@@ -533,24 +529,80 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
   // Shared pieces
   // ---------------------------------------------------------------------
 
-  Widget _buildRoundIcon(IconData icon, Color color) {
-    return Container(
-      height: 32,
-      width: 32,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, size: 18, fill: 1, color: color),
+  Widget _buildSectionTitle({required IconData icon, required String title}) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(icon, size: 18, color: theme.colorScheme.primary),
+      ],
     );
   }
 
-  /// A label on the left and its value on the right, with an icon in front of
-  /// the label when the row is one of the booking's facts.
+  /// The facts share the width evenly, so the strip fits any phone without
+  /// wrapping.
+  Widget _buildStatStrip(List<Widget> stats) {
+    final theme = Theme.of(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        for (var index = 0; index < stats.length; index++) ...[
+          if (index > 0)
+            Container(width: 1, height: 40, color: theme.dividerColor),
+          Expanded(child: stats[index]),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStat({
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+  }) {
+    final theme = Theme.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 20, fill: 1, color: theme.colorScheme.primary),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
   Widget _buildFactRow({
     required String label,
     required String value,
-    IconData? icon,
     Color? valueColor,
   }) {
     final theme = Theme.of(context);
@@ -560,10 +612,6 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 8),
-          ],
           Expanded(child: Text(label, style: theme.textTheme.bodySmall)),
           const SizedBox(width: 12),
           Expanded(
@@ -576,48 +624,6 @@ class _EventDetailsSheetState extends State<EventDetailsSheet> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  /// The bordered group both parts sit in. The icon carries the part's own
-  /// colour, so the two are told apart at a glance.
-  Widget _buildSection({
-    required IconData icon,
-    required Color accent,
-    required String title,
-    required Widget child,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 20, fill: 1, color: accent),
-              ),
-              const SizedBox(width: 10),
-              Text(title, style: theme.textTheme.headlineMedium),
-            ],
-          ),
-          const SizedBox(height: 16),
-          child,
         ],
       ),
     );

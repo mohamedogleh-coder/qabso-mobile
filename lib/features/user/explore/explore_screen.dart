@@ -32,13 +32,16 @@ class ExploreScreen extends ConsumerWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(8.0),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ExploreSearchStadiumsWidget(),
-                  SizedBox(height: 12),
-                  HistoryHomeSectionWidget(),
+                  // SizedBox(height: 12),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: HistoryHomeSectionWidget(),
+                  ),
                 ],
               ),
             ),
