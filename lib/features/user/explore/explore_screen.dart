@@ -6,8 +6,6 @@ import 'package:qabso_mobile/features/user/explore/widgets/explore_search_stadiu
 import '../../../utill/app_brand_widget.dart';
 import '../../../utill/app_dailogs.dart';
 import '../../../utill/notification_button_widget.dart';
-import '../../auth/profile_screen.dart';
-import '../../auth/user_avatar_widget.dart';
 import '../histoty/history_home_section_widget.dart';
 import '../histoty/history_notifier_provider.dart';
 
@@ -21,14 +19,10 @@ class ExploreScreen extends ConsumerWidget {
         title: const AppBrandWidget(),
         titleSpacing: 16,
         actions: [
-          TextButton.icon(onPressed: (){}, icon:Icon(Symbols.feedback),label: Text("Feed back")),
-          // NotificationButtonWidget(
-          //   onTap: () => showNotImplementedDialog(context: context),
-          // ),
-          UserAvatarWidget(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            ),
+          TextButton.icon(
+            onPressed: () {},
+            icon: Icon(Symbols.feedback),
+            label: Text("Feed back"),
           ),
         ],
       ),
@@ -36,14 +30,14 @@ class ExploreScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () => ref.read(historyNotifierProvider.notifier).refresh(),
           child: SingleChildScrollView(
-             physics: const AlwaysScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ExploreSearchStadiumsWidget(),
-                  SizedBox(height: 12,),
+                  SizedBox(height: 12),
                   HistoryHomeSectionWidget(),
                 ],
               ),

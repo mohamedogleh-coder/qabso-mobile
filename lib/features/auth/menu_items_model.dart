@@ -90,8 +90,8 @@ final userMenuList = [
   MenuItemsModel(
     iconData: Symbols.favorite,
     label: "Fav stadiums",
-    backgroundColor: const Color(0xFFF1F8E9),
-    foregroundColor: const Color(0xFF689F38),
+    backgroundColor: const Color(0xFFFFF1F2),
+    foregroundColor: const Color(0xFFBE123C),
     path: AppConstants.fields,
   ),
 
@@ -103,8 +103,8 @@ final userMenuList = [
     path: AppConstants.events,
   ),
   MenuItemsModel(
-    iconData: Symbols.settings,
-    label: "Settings",
+    iconData: Symbols.person,
+    label: "You",
     backgroundColor: const Color(0xFFFFF8E1),
     foregroundColor: const Color(0xFFF9A825),
     path: AppConstants.workingDays,

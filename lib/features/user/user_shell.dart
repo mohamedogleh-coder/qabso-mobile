@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:qabso_mobile/features/user/histoty/history_screen.dart';
 
-import '../../utill/app_bottom_navigation.dart';
+import '../auth/profile_screen.dart';
+import 'user_bottom_navigation.dart';
 import '../auth/menu_items_model.dart';
 import 'explore/explore_screen.dart';
 import 'favourites/fav_stadiums_screen.dart';
-import 'settings/user_settings_screen.dart';
 
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -23,7 +23,7 @@ class _UserShellState extends ConsumerState<UserShell> {
     ExploreScreen(),
     FavStadiumsScreen(),
     HistoryScreen(),
-    UserSettingsScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -32,7 +32,7 @@ class _UserShellState extends ConsumerState<UserShell> {
     final selectedIndexNotifier = ref.read(selectedIndexProvider.notifier);
     return Scaffold(
       body: IndexedStack(index: selectedIndex, children: _screens),
-      bottomNavigationBar: AppBottomNavigation(
+      bottomNavigationBar: UserBottomNavigation(
         items: userMenuList,
         selectedIndex: selectedIndex,
         onItemSelected: (index) =>

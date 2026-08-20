@@ -15,11 +15,6 @@ import '../../utill/loading_widget.dart';
 import 'app_user_model.dart';
 import 'app_user_notifer.dart';
 
-/// The signed-in user's own profile, and the form for changing it.
-///
-/// There is no user to choose here. The profile comes from
-/// [appUserNotifierProvider] and the write goes back through it, so this
-/// screen always edits whoever is signed in.
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -32,15 +27,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  /// The picture picked in this session, and whether the stored one was taken
-  /// down. Both are null/false until the user actually touches the picker.
   File? _pickedAvatar;
   bool _avatarRemoved = false;
 
   bool _isSaving = false;
 
-  /// The profile the form was filled from, so the fields are only seeded once
-  /// and typing is never overwritten by a rebuild.
   String? _loadedUserId;
 
   @override
@@ -65,8 +56,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _avatarRemoved;
   }
 
-  /// Sends only what moved: a field that still matches the stored profile is
-  /// left out, so the row keeps whatever it already had.
   Future<void> _save(AppUserModel user) async {
     if (_isSaving) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -109,12 +98,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  /// Asks first, then signs the user out. The dialog does the waiting and
+  /// shows anything that goes wrong, so nothing is needed here after it.
+  Future<void> _confirmLogout() async {
+    await showAppConfirmationDialog(
+      context: context,
+      title: "Logout",
+      message: "Are you sure you want to logout?",
+      confirmText: "Logout",
+      isDestructive: true,
+      icon: Symbols.logout,
+      onConfirm: () => ref.read(authRepositoryProvider).signOut(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(appUserNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Profile")),
+      appBar: AppBar(
+        title: const Text("My Account"),
+        titleSpacing: 20,
+        actions: [
+          TextButton.icon(
+            onPressed: _confirmLogout,
+            icon: const Icon(Symbols.logout),
+            label: const Text("Logout"),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: userAsync.when(
           loading: () => const LoadingWidget(),
@@ -173,8 +186,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           size: 112,
           onChanged: (file) => setState(() {
             _pickedAvatar = file;
-            // A null file is the user taking the picture down, which only
-            // means anything when there was one stored to take down.
             _avatarRemoved = file == null && user.profile != null;
           }),
         ),
@@ -227,8 +238,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  /// What the account is, rather than what the user can type. The role and the
-  /// join date are set elsewhere, so they are shown and not offered.
   Widget _buildAccountFacts(AppUserModel user) {
     final theme = Theme.of(context);
 
