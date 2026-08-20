@@ -33,6 +33,7 @@ class _ExploredStadiumCardWidgetState
     contextModel = BookingContextModel(
       fieldId: widget.stadiumModel.fieldId,
       stadiumId: widget.stadiumModel.stadiumId!,
+      stadiumName: widget.stadiumModel.stadiumName,
       capacity: widget.stadiumModel.capacity,
       cost: widget.stadiumModel.cost,
       allowHalfBooking: widget.stadiumModel.allowHalfBooking,

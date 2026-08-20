@@ -42,6 +42,7 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
         return TimeSlotsListWidget(
           booking: BookingContextModel(
             stadiumId: stadiumId,
+            stadiumName: stadium!.stadiumName,
             fieldId: fieldId,
             capacity: widget.model.capacity,
             cost: widget.model.cost,

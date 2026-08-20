@@ -25,15 +25,15 @@ class _ExploreSearchStadiumsWidgetState
       exploredStadiumFilterNotifierProvider.notifier,
     );
     return Container(
-      margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border.all(
           color: Theme.of(context).colorScheme.primary,
-          width: 2,
+          width: 2.5,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
+        crossAxisAlignment: .start,
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildCard(
@@ -46,11 +46,16 @@ class _ExploreSearchStadiumsWidgetState
                   style: IconButton.styleFrom(
                     disabledForegroundColor: Theme.of(context).dividerColor,
                     backgroundColor: Theme.of(context).colorScheme.tertiary,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onTertiary,
                   ),
                   onPressed: filter.capacity <= 6
                       ? null
                       : () {
-                          filterNotifier.updateCapacity(filter.capacity - 1);
+                          filterNotifier.updateCapacity(
+                            filter.capacity - 1,
+                          );
                         },
                   icon: const Icon(Symbols.remove),
                 ),
@@ -59,9 +64,8 @@ class _ExploreSearchStadiumsWidgetState
                     children: [
                       TextSpan(
                         text: '${filter.capacity}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       TextSpan(
                         text: " Players",
@@ -74,11 +78,16 @@ class _ExploreSearchStadiumsWidgetState
                   style: IconButton.styleFrom(
                     disabledForegroundColor: Theme.of(context).dividerColor,
                     backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary,
                   ),
                   onPressed: filter.capacity >= 14
                       ? null
                       : () {
-                          filterNotifier.updateCapacity(filter.capacity + 1);
+                          filterNotifier.updateCapacity(
+                            filter.capacity + 1,
+                          );
                         },
                   icon: const Icon(Symbols.add),
                 ),
@@ -103,7 +112,7 @@ class _ExploreSearchStadiumsWidgetState
                 },
                 child: Text(
                   AppDateUtil.formatReadableDate(filter.eventDate),
-                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.tertiary,
                   ),
@@ -133,7 +142,7 @@ class _ExploreSearchStadiumsWidgetState
                               filter.eventTime!,
                             )
                           : "All the time",
-                      style: Theme.of(context).textTheme.headlineMedium!
+                      style: Theme.of(context).textTheme.bodyMedium!
                           .copyWith(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.tertiary,
@@ -203,7 +212,11 @@ class _ExploreSearchStadiumsWidgetState
           children: [
             Row(
               children: [
-                Icon(icon, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  icon,
+                  fill: 1,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
                 Text(title),
               ],

@@ -4,107 +4,102 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../utill/error_widget.dart';
-import '../../../utill/loading_widget.dart';
 import '../user_shell.dart';
 import 'history_card_widget.dart';
+import 'history_group.dart';
 import 'history_model.dart';
-import 'history_repository.dart';
+import 'history_notifier_provider.dart';
+import 'history_shimmer_widget.dart';
 
-class HistoryScreen extends ConsumerStatefulWidget {
+class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
   @override
-  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
-}
-
-class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  late Future<List<HistoryModel>> historyFuture;
-
-  @override
-  void initState() {
-    super.initState();
-
-    historyFuture = HistoryRepository.getHistory();
-  }
-
-  void _reload() {
-    setState(() {
-      historyFuture = HistoryRepository.getHistory();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("History"),
+        title: const Text("Booking History"),
         titleSpacing: 20,
-        actions: [
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                _reload();
-              });
-            },
-            icon: Icon(Symbols.refresh),
-            label: Text("Refresh"),
-          ),
-        ],
+        // actions: [
+        //   TextButton.icon(
+        //     onPressed: () =>
+        //         ref.read(historyNotifierProvider.notifier).refresh(),
+        //     icon: const Icon(Symbols.refresh),
+        //     label: const Text("Refresh"),
+        //   ),
+        // ],
       ),
       body: SafeArea(
-        child: FutureBuilder<List<HistoryModel>>(
-          future: historyFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const LoadingWidget();
-            }
-
-            if (snapshot.hasError) {
-              final error = snapshot.error;
-
-              return ErrorRetryWidget(
+        child: ref
+            .watch(historyNotifierProvider)
+            .when(
+              skipLoadingOnRefresh: false,
+              loading: () => const Padding(
+                padding: EdgeInsets.all(12),
+                child: HistoryShimmerWidget(cards: 6),
+              ),
+              error: (error, stackTrace) => ErrorRetryWidget(
                 errorMessage: error is PostgrestException
                     ? error.message
                     : error.toString(),
-                onRetry: _reload,
-              );
-            }
-
-            final history = snapshot.data ?? const <HistoryModel>[];
-
-            if (history.isEmpty) return _buildEmpty();
-
-            return _buildList(history);
-          },
-        ),
+                onRetry: () =>
+                    ref.read(historyNotifierProvider.notifier).refresh(),
+              ),
+              data: (history) => history.isEmpty
+                  ? _buildEmpty(context, ref)
+                  : _buildList(context, ref, history),
+            ),
       ),
     );
   }
 
-  Widget _buildList(List<HistoryModel> history) {
+  /// Every booking, under the heading for the day its game is on.
+  Widget _buildList(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryModel> history,
+  ) {
+    final theme = Theme.of(context);
+    final grouped = groupHistory(history);
+
     return RefreshIndicator(
-      onRefresh: () async {
-        _reload();
-        await historyFuture;
-      },
+      onRefresh: () => ref.read(historyNotifierProvider.notifier).refresh(),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: ListView.separated(
+          child: ListView(
             padding: const EdgeInsets.all(12),
-            itemCount: history.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) => HistoryCardWidget(
-              key: ValueKey(history[index].eventId),
-              history: history[index],
-            ),
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              for (final entry in grouped.entries) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    entry.key.label.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                for (final booking in entry.value) ...[
+                  HistoryCardWidget(
+                    key: ValueKey(booking.eventId),
+                    history: booking,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 8),
+              ],
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Center(
@@ -127,9 +122,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             ),
             const SizedBox(height: 8),
             TextButton.icon(
-              onPressed: () {
-                ref.read(selectedIndexProvider.notifier).state = 0;
-              },
+              onPressed: () =>
+                  ref.read(selectedIndexProvider.notifier).state = 0,
               icon: const Icon(Symbols.search),
               label: const Text("Explore now"),
             ),

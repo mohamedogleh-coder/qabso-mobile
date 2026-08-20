@@ -11,6 +11,8 @@ import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/cancel_event_widget.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/event_details_sheet.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/reschedule_event_widget.dart';
+import 'package:qabso_mobile/features/user/histoty/history_model.dart';
+import 'package:qabso_mobile/features/user/histoty/history_notifier_provider.dart';
 import 'package:qabso_mobile/payments/payment_allocation_model.dart';
 import 'package:qabso_mobile/payments/payment_result.dart';
 import 'package:qabso_mobile/payments/user_payment_widget.dart';
@@ -516,6 +518,23 @@ class NewTimeSlotCard extends ConsumerWidget {
     );
 
     if (eventId == null || !sheetContext.mounted) return;
+
+    // The booking goes straight into the history the home screen shows, so it
+    // appears there without reading the whole list back. This path always
+    // takes the whole slot, so nothing is left owing on it.
+    ref
+        .read(historyNotifierProvider.notifier)
+        .addBooking(
+          HistoryModel(
+            eventId: eventId,
+            stadiumName: booking.stadiumName,
+            eventStart: slotModel.startTime,
+            eventEnd: slotModel.endTime,
+            eventStatus: EventStatus.confirmed,
+            amountPaid: allocation.amountPaid,
+            remaining: 0,
+          ),
+        );
 
     Navigator.pop(sheetContext, true);
   }

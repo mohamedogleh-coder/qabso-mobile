@@ -15,6 +15,7 @@ import 'package:equatable/equatable.dart';
 class BookingContextModel extends Equatable {
   const BookingContextModel({
     required this.stadiumId,
+    required this.stadiumName,
     required this.fieldId,
     required this.capacity,
     required this.cost,
@@ -22,6 +23,11 @@ class BookingContextModel extends Equatable {
   });
 
   final String stadiumId;
+
+  /// Shown on a booking the customer just made, so their history can name the
+  /// stadium without reading it back.
+  final String stadiumName;
+
   final int fieldId;
 
   /// How many players the field holds. [cost] is charged per player, so the
@@ -40,6 +46,7 @@ class BookingContextModel extends Equatable {
   @override
   List<Object?> get props => [
     stadiumId,
+    stadiumName,
     fieldId,
     capacity,
     cost,

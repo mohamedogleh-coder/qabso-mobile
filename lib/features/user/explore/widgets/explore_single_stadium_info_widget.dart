@@ -48,6 +48,7 @@ class _ExploreSingleStadiumInfoWidgetState
 
     _booking = BookingContextModel(
       stadiumId: _stadium.stadiumId!,
+      stadiumName: _stadium.stadiumName,
       fieldId: _stadium.fieldId,
       capacity: _stadium.capacity,
       cost: _stadium.cost,

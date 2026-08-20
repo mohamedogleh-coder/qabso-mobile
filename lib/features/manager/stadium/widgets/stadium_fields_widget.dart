@@ -323,6 +323,7 @@ class _StadiumFieldsWidgetState extends ConsumerState<StadiumFieldsWidget>
               child: TimeSlotsListWidget(
                 booking: BookingContextModel(
                   stadiumId: _stadiumId,
+                  stadiumName: widget.stadium.stadiumName,
                   fieldId: fieldId,
                   capacity: field.capacity,
                   cost: field.cost,
