@@ -12,6 +12,7 @@ import 'package:qabso_mobile/features/manager/events/widgets/cancel_event_widget
 import 'package:qabso_mobile/features/manager/events/widgets/event_details_sheet.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/reschedule_event_widget.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NewTimeSlotCard extends ConsumerWidget {
   final BookingContextModel booking;
@@ -135,6 +136,22 @@ class NewTimeSlotCard extends ConsumerWidget {
                 EventDetailsSheet.show(context, eventId: eventId);
               },
             ),
+            if (slotModel.referenceNumber != null) ...[
+              const Divider(height: 1, indent: 20, endIndent: 20),
+              _buildActionTile(
+                theme: theme,
+                icon: Symbols.call,
+                color: theme.colorScheme.secondary,
+                title: "Call Booked User",
+                description:
+                    "Wac qofka qabsaday event-kan: "
+                    "${slotModel.referenceNumber}",
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _callBookedUser(context);
+                },
+              ),
+            ],
             const Divider(height: 1, indent: 20, endIndent: 20),
             _buildActionTile(
               theme: theme,
@@ -167,6 +184,24 @@ class NewTimeSlotCard extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  /// Opens the phone dialler with the customer's number already typed in.
+  /// The manager still presses call themselves, so nothing is dialled by
+  /// accident.
+  Future<void> _callBookedUser(BuildContext context) async {
+    final phone = slotModel.referenceNumber;
+    if (phone == null) return;
+
+    final opened = await launchUrl(Uri(scheme: "tel", path: phone));
+
+    if (opened || !context.mounted) return;
+
+    await showAppErrorDialog(
+      context: context,
+      title: "Wicitaanku ma furmin",
+      message: "Telefoonkan ma furi karo lambarka $phone.",
     );
   }
 
@@ -486,62 +521,49 @@ class NewTimeSlotCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    return _buildYouBadge(
-      theme,
-      _buildStateBadge(theme, _buildCard(context, ref, theme)),
-    );
+    return _buildBadge(theme, _buildCard(context, ref, theme));
   }
 
-  /// Marks the customer's own booking, in the corner opposite the state mark
-  /// so the two never sit on top of each other.
-  Widget _buildYouBadge(ThemeData theme, Widget child) {
-    return badges.Badge(
-      position: badges.BadgePosition.topEnd(top: -4, end: -2),
-      showBadge: slotModel.isMine,
-      badgeStyle: badges.BadgeStyle(
-        shape: badges.BadgeShape.square,
-        badgeColor: theme.colorScheme.primary,
-        borderRadius: BorderRadius.circular(24),
-        elevation: 1,
-      ),
-      badgeContent: Text(
-        "You",
-        style: theme.textTheme.labelSmall?.copyWith(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.onPrimary,
-        ),
-      ),
-      child: child,
-    );
-  }
-
-  /// Says what happened to the hour: a lock on a private half booking, or
-  /// Played once the game is over.
-  Widget _buildStateBadge(ThemeData theme, Widget child) {
+  /// One corner mark. It says whose booking it is first, since that is what
+  /// the customer looks for, and what happened to the hour after. A lock is
+  /// only left for somebody else's private half booking.
+  Widget _buildBadge(ThemeData theme, Widget child) {
+    final isMine = slotModel.isMine;
     final isPlayed = _isPlayed;
     final isLocked =
         slotModel.isPrivate && slotModel.eventStatus == EventStatus.pending;
 
+    final label = isMine && isPlayed
+        ? "You, played"
+        : isMine
+        ? "You"
+        : isPlayed
+        ? "Played"
+        : null;
+
     return badges.Badge(
       position: badges.BadgePosition.topStart(top: -4, start: -2),
-      showBadge: isPlayed || isLocked,
+      showBadge: label != null || isLocked,
       badgeStyle: badges.BadgeStyle(
         shape: badges.BadgeShape.square,
-        badgeColor: theme.colorScheme.tertiary,
+        badgeColor: isMine
+            ? theme.colorScheme.primary
+            : theme.colorScheme.tertiary,
         borderRadius: BorderRadius.circular(24),
         elevation: 1,
       ),
-      badgeContent: isPlayed
+      badgeContent: label != null
           ? Text(
-              "Played",
+              label,
               style: theme.textTheme.labelSmall?.copyWith(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onTertiary,
+                color: isMine
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onTertiary,
               ),
             )
-          : Icon(Symbols.lock, size: 12, color: theme.colorScheme.onPrimary),
+          : Icon(Symbols.lock, size: 12, color: theme.colorScheme.onTertiary),
       child: child,
     );
   }
