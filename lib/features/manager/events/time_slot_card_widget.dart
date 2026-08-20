@@ -9,6 +9,7 @@ import 'package:qabso_mobile/features/manager/events/models/half_booked_event_mo
 import 'package:qabso_mobile/features/manager/events/time_slots_model.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/book_another_half_widget.dart';
 import 'package:qabso_mobile/features/manager/events/widgets/event_booking_options_widget.dart';
+import 'package:qabso_mobile/features/manager/events/widgets/event_details_sheet.dart';
 import 'package:qabso_mobile/utill/app_dailogs.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -45,11 +46,19 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
 
   TimeSlotModel get _slot => widget.slotModel;
 
-  bool get _isPastAndFree =>
-      _slot.isAvailable && _slot.startTime.isBefore(DateTime.now());
+  bool get _isPastAndFree => _slot.isAvailable && _slot.isPast;
+
+  /// A booked hour that has already been played.
+  bool get _isPlayed =>
+      _slot.isPast && _slot.eventStatus == EventStatus.confirmed;
 
   Future<void> onTapHandler() async {
     if (isBooking) return;
+
+    if (_slot.isPast) {
+      await _onPastTap();
+      return;
+    }
 
     switch (_slot.eventStatus) {
       case EventStatus.available:
@@ -67,6 +76,23 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
       case EventStatus.completed:
         throw UnimplementedError();
     }
+  }
+
+  /// The time of this slot has gone by. A free one can no longer be booked,
+  /// so we only say so. A taken one still opens its event info.
+  Future<void> _onPastTap() {
+    final eventId = _slot.eventId;
+
+    if (_slot.isAvailable || eventId == null) {
+      return showInformationDialog(
+        context: context,
+        icon: Symbols.history,
+        title: "Slot-kan waa past",
+        message: "Waqtigiisu wuu dhaafay, ciduna ma qaadan.",
+      );
+    }
+
+    return EventDetailsSheet.show(context, eventId: eventId);
   }
 
   /// Nobody booked this slot yet.
@@ -221,6 +247,13 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
       );
     }
 
+    if (_isPlayed) {
+      return _slotDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.18),
+        border: theme.colorScheme.primary.withValues(alpha: 0.30),
+      );
+    }
+
     return _slotDecoration(color: booked, border: booked);
   }
 
@@ -247,26 +280,35 @@ class _TimeSlotCardWidgetState extends ConsumerState<TimeSlotCardWidget> {
         ? theme.disabledColor
         : theme.colorScheme.onSurface;
 
+    final isPlayed = _isPlayed;
+    final isLocked =
+        _slot.isPrivate && _slot.eventStatus == EventStatus.pending;
+
     return badges.Badge(
       position: badges.BadgePosition.topStart(top: -4, start: -2),
-      showBadge:
-          (widget.slotModel.isPrivate &&
-          widget.slotModel.eventStatus == EventStatus.pending),
+      showBadge: isPlayed || isLocked,
       badgeStyle: badges.BadgeStyle(
         shape: badges.BadgeShape.square,
-        badgeColor: theme.colorScheme.tertiary,
+        badgeColor: isPlayed
+            ? theme.colorScheme.onSurfaceVariant
+            : theme.colorScheme.tertiary,
         borderRadius: BorderRadius.circular(24),
         elevation: 1,
       ),
-      badgeContent: Icon(
-        Symbols.lock,
-        size: 12,
-        color: theme.colorScheme.onPrimary,
-      ),
+      badgeContent: isPlayed
+          ? Text(
+              "Played",
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.surface,
+              ),
+            )
+          : Icon(Symbols.lock, size: 12, color: theme.colorScheme.onPrimary),
       child: Card(
         elevation: 0,
         child: InkWell(
-          onTap: isBooking || isPastAndFree ? null : onTapHandler,
+          onTap: isBooking ? null : onTapHandler,
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: _buildDecoration(theme),

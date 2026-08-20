@@ -23,8 +23,11 @@ class NewTimeSlotCard extends ConsumerWidget {
     required this.slotModel,
   });
 
-  bool get _isPastAndFree =>
-      slotModel.isAvailable && slotModel.startTime.isBefore(DateTime.now());
+  bool get _isPastAndFree => slotModel.isAvailable && slotModel.isPast;
+
+  /// A booked hour that has already been played.
+  bool get _isPlayed =>
+      slotModel.isPast && slotModel.eventStatus == EventStatus.confirmed;
 
   void _onTap(BuildContext context, WidgetRef ref) {
     final role = ref.read(appUserNotifierProvider).value?.role;
@@ -40,13 +43,39 @@ class NewTimeSlotCard extends ConsumerWidget {
     }
   }
 
+  /// The time of this slot has gone by. A free one can no longer be booked,
+  /// so we only say so. A taken one still opens its event info, because the
+  /// manager may read any booking on their own field.
+  void _onPastTap(BuildContext context) {
+    final eventId = slotModel.eventId;
+
+    if (slotModel.isAvailable || eventId == null) {
+      _showPastDialog(context);
+      return;
+    }
+
+    EventDetailsSheet.show(context, eventId: eventId);
+  }
+
+  void _showPastDialog(BuildContext context) {
+    showInformationDialog(
+      context: context,
+      icon: Symbols.history,
+      title: "Event-kan waa past",
+      message: "Waqtigiisu wuu dhaafay, ciduna ma qaadan.",
+    );
+  }
+
   Future<void> _onManagerTap(BuildContext context, WidgetRef ref) async {
+    if (slotModel.isPast) {
+      _onPastTap(context);
+      return;
+    }
+
     if (slotModel.eventStatus == EventStatus.confirmed) {
       await _openConfirmedSlotOptions(context, ref);
       return;
     }
-
-    if (!slotModel.isAvailable) return;
 
     final payment = await EventBookingService.collectPayment(
       context: context,
@@ -77,10 +106,6 @@ class NewTimeSlotCard extends ConsumerWidget {
     await _showBookingDoneDialog(context, ref);
   }
 
-  /// A slot that is already sold. The manager picks what to do with it.
-  ///
-  /// Only the first option works today. The other two say so instead of
-  /// doing nothing, so the manager knows the tap was heard.
   Future<void> _openConfirmedSlotOptions(
     BuildContext context,
     WidgetRef ref,
@@ -362,8 +387,7 @@ class NewTimeSlotCard extends ConsumerWidget {
       icon: Symbols.check_circle,
       title: "Booked Successfully",
       message:
-          "Waqtigaagu waa ${slotModel.label}. Fadlan usheeg in ay wakhtiga ilashaan ciyaarayashu insha Alah"
-          "aadan u seegin.",
+          "Xiliga la qabtay waa ${slotModel.label}. Fadlan ciyaarayasha usheeg in ay wakhtiga ilashaan  insha Alah",
       confirmText: "Book new event",
       cancelText: "Thanks",
     );
@@ -377,7 +401,36 @@ class NewTimeSlotCard extends ConsumerWidget {
     }
   }
 
-  void _onUserTap(BuildContext context) {}
+  /// What a customer sees when they tap an hour.
+  ///
+  /// Their own booking opens. Somebody else's only says it is taken. An hour
+  /// nobody took and that has gone by says so.
+  void _onUserTap(BuildContext context) {
+    final eventId = slotModel.eventId;
+
+    if (slotModel.isMine && eventId != null) {
+      EventDetailsSheet.show(context, eventId: eventId);
+      return;
+    }
+
+    if (!slotModel.isAvailable) {
+      showInformationDialog(
+        context: context,
+        icon: Symbols.event_busy,
+        title: "Event-kan waa la qaatay",
+        message:
+            "Fadlan faah-faahinta even-kan waxa arki kara ruuxa booking ka sameyey.",
+      );
+      return;
+    }
+
+    if (slotModel.isPast) {
+      _showPastDialog(context);
+      return;
+    }
+
+    // The customer booking flow is not built yet.
+  }
 
   BoxDecoration _buildDecoration(ThemeData theme) {
     final booked = theme.colorScheme.primary.withValues(alpha: 0.5);
@@ -406,6 +459,13 @@ class NewTimeSlotCard extends ConsumerWidget {
       );
     }
 
+    if (_isPlayed) {
+      return _slotDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.18),
+        border: theme.colorScheme.primary.withValues(alpha: 0.30),
+      );
+    }
+
     return _slotDecoration(color: booked, border: booked);
   }
 
@@ -426,38 +486,83 @@ class NewTimeSlotCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    final foreground = _isPastAndFree
-        ? theme.disabledColor
-        : theme.colorScheme.onSurface;
+    return _buildYouBadge(
+      theme,
+      _buildStateBadge(theme, _buildCard(context, ref, theme)),
+    );
+  }
+
+  /// Marks the customer's own booking, in the corner opposite the state mark
+  /// so the two never sit on top of each other.
+  Widget _buildYouBadge(ThemeData theme, Widget child) {
+    return badges.Badge(
+      position: badges.BadgePosition.topEnd(top: -4, end: -2),
+      showBadge: slotModel.isMine,
+      badgeStyle: badges.BadgeStyle(
+        shape: badges.BadgeShape.square,
+        badgeColor: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(24),
+        elevation: 1,
+      ),
+      badgeContent: Text(
+        "You",
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.onPrimary,
+        ),
+      ),
+      child: child,
+    );
+  }
+
+  /// Says what happened to the hour: a lock on a private half booking, or
+  /// Played once the game is over.
+  Widget _buildStateBadge(ThemeData theme, Widget child) {
+    final isPlayed = _isPlayed;
+    final isLocked =
+        slotModel.isPrivate && slotModel.eventStatus == EventStatus.pending;
 
     return badges.Badge(
       position: badges.BadgePosition.topStart(top: -4, start: -2),
-      showBadge:
-          (slotModel.isPrivate && slotModel.eventStatus == EventStatus.pending),
+      showBadge: isPlayed || isLocked,
       badgeStyle: badges.BadgeStyle(
         shape: badges.BadgeShape.square,
         badgeColor: theme.colorScheme.tertiary,
         borderRadius: BorderRadius.circular(24),
         elevation: 1,
       ),
-      badgeContent: Icon(
-        Symbols.lock,
-        size: 12,
-        color: theme.colorScheme.onPrimary,
-      ),
-      child: Card(
-        elevation: 0,
-        child: InkWell(
-          onTap: () => _onTap(context, ref),
-          child: Container(
-            padding: const EdgeInsets.all(12.0),
-            decoration: _buildDecoration(theme),
-            child: Text(
-              slotModel.label,
-              style: theme.textTheme.bodySmall!.copyWith(
+      badgeContent: isPlayed
+          ? Text(
+              "Played",
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 9,
                 fontWeight: FontWeight.bold,
-                color: foreground,
+                color: theme.colorScheme.onTertiary,
               ),
+            )
+          : Icon(Symbols.lock, size: 12, color: theme.colorScheme.onPrimary),
+      child: child,
+    );
+  }
+
+  Widget _buildCard(BuildContext context, WidgetRef ref, ThemeData theme) {
+    final foreground = _isPastAndFree
+        ? theme.disabledColor
+        : theme.colorScheme.onSurface;
+
+    return Card(
+      elevation: 0,
+      child: InkWell(
+        onTap: () => _onTap(context, ref),
+        child: Container(
+          padding: const EdgeInsets.all(12.0),
+          decoration: _buildDecoration(theme),
+          child: Text(
+            slotModel.label,
+            style: theme.textTheme.bodySmall!.copyWith(
+              fontWeight: FontWeight.bold,
+              color: foreground,
             ),
           ),
         ),

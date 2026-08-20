@@ -26,12 +26,20 @@ class TimeSlotModel extends Equatable {
   final String? eventKey;
   final EventStatus eventStatus;
 
+  /// True when the signed-in customer paid for this booking.
+  final bool isMine;
+
+  /// The phone number of whoever paid, so the manager can call them back.
+  final String? referenceNumber;
+
   const TimeSlotModel({
     required this.startTime,
     required this.endTime,
     this.eventId,
     this.eventKey,
     required this.eventStatus,
+    this.isMine = false,
+    this.referenceNumber,
   });
 
   factory TimeSlotModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +49,8 @@ class TimeSlotModel extends Equatable {
       eventId: json['eventId'] as int?,
       eventKey: json['eventKey'] as String?,
       eventStatus: EventStatus.fromString(json['eventStatus']),
+      isMine: json['isMine'] as bool? ?? false,
+      referenceNumber: json['reference_number'] as String?,
     );
   }
 
@@ -51,6 +61,8 @@ class TimeSlotModel extends Equatable {
       'eventId': eventId,
       'eventKey': eventKey,
       'eventStatus': eventStatus.value,
+      'isMine': isMine,
+      'reference_number': referenceNumber,
     };
   }
 
@@ -60,6 +72,8 @@ class TimeSlotModel extends Equatable {
     int? eventId,
     String? Function()? eventKey,
     EventStatus? eventStatus,
+    bool? isMine,
+    String? Function()? referenceNumber,
   }) {
     return TimeSlotModel(
       startTime: startTime ?? this.startTime,
@@ -67,6 +81,10 @@ class TimeSlotModel extends Equatable {
       eventId: eventId ?? this.eventId,
       eventKey: eventKey != null ? eventKey() : this.eventKey,
       eventStatus: eventStatus ?? this.eventStatus,
+      isMine: isMine ?? this.isMine,
+      referenceNumber: referenceNumber != null
+          ? referenceNumber()
+          : this.referenceNumber,
     );
   }
 
@@ -77,6 +95,9 @@ class TimeSlotModel extends Equatable {
 
   bool get isAvailable => eventStatus == EventStatus.available;
 
+  /// True when this hour has already started, so it is gone.
+  bool get isPast => startTime.isBefore(DateTime.now());
+
   @override
   List<Object?> get props => [
     startTime,
@@ -84,5 +105,7 @@ class TimeSlotModel extends Equatable {
     eventId,
     eventKey,
     eventStatus,
+    isMine,
+    referenceNumber,
   ];
 }
