@@ -40,9 +40,6 @@ class _ExploredStadiumCardWidgetState
     );
   }
 
-  /// How far the stadium is. The search measures it itself when the customer
-  /// searched from their position; otherwise it is worked out from where the
-  /// phone is now. Neither one available leaves it unknown.
   String get _distance {
     final searched = widget.stadiumModel.distance;
     if (searched != null) return "$searched km";
@@ -52,7 +49,7 @@ class _ExploredStadiumCardWidgetState
     final longitude = widget.stadiumModel.longitude;
 
     if (position == null || latitude == null || longitude == null) {
-      return "Unknown";
+      return "--/--";
     }
 
     final metres = Geolocator.distanceBetween(
@@ -65,8 +62,7 @@ class _ExploredStadiumCardWidgetState
     return "${(metres / 1000).toStringAsFixed(1)} km";
   }
 
-  /// One fact on the card: its icon, then what it says.
-  Widget _buildFact({required IconData icon, required String text}) {
+   Widget _buildFact({required IconData icon, required String text}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -80,7 +76,8 @@ class _ExploredStadiumCardWidgetState
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: expanded ? 1 : 0,
+      elevation: expanded ? 3 : 0,
+      shadowColor: Theme.of(context).shadowColor.withValues(alpha: 0.35),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -175,7 +172,7 @@ class _ExploredStadiumCardWidgetState
                                   ),
                                   const SizedBox(width: 12,),
                                   _buildFact(
-                                    icon: Symbols.near_me,
+                                    icon: Symbols.map,
                                     text: _distance,
                                   ),
                                 ],

@@ -26,11 +26,19 @@ class _ExploreSearchStadiumsWidgetState
     );
     return Container(
       decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
         border: Border.all(
           color: Theme.of(context).colorScheme.primary,
           width: 2.5,
         ),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.35),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: .start,
@@ -46,16 +54,12 @@ class _ExploreSearchStadiumsWidgetState
                   style: IconButton.styleFrom(
                     disabledForegroundColor: Theme.of(context).dividerColor,
                     backgroundColor: Theme.of(context).colorScheme.tertiary,
-                    foregroundColor: Theme.of(
-                      context,
-                    ).colorScheme.onTertiary,
+                    foregroundColor: Theme.of(context).colorScheme.onTertiary,
                   ),
                   onPressed: filter.capacity <= 6
                       ? null
                       : () {
-                          filterNotifier.updateCapacity(
-                            filter.capacity - 1,
-                          );
+                          filterNotifier.updateCapacity(filter.capacity - 1);
                         },
                   icon: const Icon(Symbols.remove),
                 ),
@@ -64,8 +68,9 @@ class _ExploreSearchStadiumsWidgetState
                     children: [
                       TextSpan(
                         text: '${filter.capacity}',
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       TextSpan(
                         text: " Players",
@@ -78,16 +83,12 @@ class _ExploreSearchStadiumsWidgetState
                   style: IconButton.styleFrom(
                     disabledForegroundColor: Theme.of(context).dividerColor,
                     backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(
-                      context,
-                    ).colorScheme.onPrimary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   ),
                   onPressed: filter.capacity >= 14
                       ? null
                       : () {
-                          filterNotifier.updateCapacity(
-                            filter.capacity + 1,
-                          );
+                          filterNotifier.updateCapacity(filter.capacity + 1);
                         },
                   icon: const Icon(Symbols.add),
                 ),
@@ -142,11 +143,10 @@ class _ExploreSearchStadiumsWidgetState
                               filter.eventTime!,
                             )
                           : "All the time",
-                      style: Theme.of(context).textTheme.bodyMedium!
-                          .copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.tertiary,
-                          ),
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
                     ),
                   ),
                   if (filter.eventTime != null) ...[
@@ -203,7 +203,7 @@ class _ExploreSearchStadiumsWidgetState
   }) {
     return Card(
       elevation: 0,
-      margin: EdgeInsets.symmetric(vertical: 0.4),
+      margin: const EdgeInsets.symmetric(vertical: 0.4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),

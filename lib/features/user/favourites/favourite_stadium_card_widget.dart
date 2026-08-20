@@ -141,7 +141,7 @@ class _FavouriteStadiumCardWidgetState
       children: [
         Row(
           children: [
-            const Icon(Symbols.sports),
+            const Icon(Symbols.sports,size: 18,),
             const SizedBox(width: 8),
             Text(
               _stadium.extraTime == 0
