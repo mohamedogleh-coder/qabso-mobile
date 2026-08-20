@@ -196,6 +196,7 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
                 ),
               ),
             ),
+            if(widget.model.allowBooking)
             Divider(height: 24),
             AnimatedSize(
               duration: AppConstants.animationDuration,
@@ -206,28 +207,30 @@ class _FieldCardWidgetState extends ConsumerState<FieldCardWidget> {
                       child: _buildTimeSlots(),
                     ),
             ),
-            if (expanded) Divider(height: 24),
-            InkWell(
-              onTap: () {
-                setState(() {
-                  expanded = !expanded;
-                });
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: .center,
-                  children: [
-                    Icon(
-                      expanded
-                          ? Symbols.arrow_drop_up
-                          : Symbols.arrow_drop_down,
-                    ),
-                    Text(expanded ? "Hide events" : "Show events"),
-                  ],
+            if(widget.model.allowBooking)...[
+              if (expanded) Divider(height: 24),
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    expanded = !expanded;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    mainAxisAlignment: .center,
+                    children: [
+                      Icon(
+                        expanded
+                            ? Symbols.arrow_drop_up
+                            : Symbols.arrow_drop_down,
+                      ),
+                      Text(expanded ? "Hide events" : "Show events"),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ]
           ],
         ),
       ),
