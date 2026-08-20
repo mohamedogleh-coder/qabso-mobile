@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../utill/app_dailogs.dart';
 import '../../../utill/error_widget.dart';
-import '../../../utill/loading_widget.dart';
+import '../../../utill/card_list_shimmer_widget.dart';
 import '../../manager/stadium/stadium_model.dart';
 import 'favourite_notifier_provider.dart';
 import 'favourite_stadium_card_widget.dart';
@@ -33,18 +33,24 @@ class FavStadiumsScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: favouritesAsync.when(
-        skipLoadingOnRefresh: false,
-        data: (stadiums) => stadiums.isEmpty
-            ? _buildEmpty(context, ref)
-            : _buildList(context, ref, stadiums),
-        error: (error, stackTrace) => ErrorRetryWidget(
-          errorMessage: error is PostgrestException
-              ? error.message
-              : error.toString(),
-          onRetry: () => ref.read(favouriteNotifierProvider.notifier).refresh(),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: favouritesAsync.when(
+          skipLoadingOnRefresh: false,
+          data: (stadiums) => stadiums.isEmpty
+              ? _buildEmpty(context, ref)
+              : _buildList(context, ref, stadiums),
+          error: (error, stackTrace) => ErrorRetryWidget(
+            errorMessage: error is PostgrestException
+                ? error.message
+                : error.toString(),
+            onRetry: () => ref.read(favouriteNotifierProvider.notifier).refresh(),
+          ),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(12),
+            child: CardListShimmerWidget(cards: 2),
+          ),
         ),
-        loading: () => const LoadingWidget(),
       ),
     );
   }
@@ -75,9 +81,12 @@ class FavStadiumsScreen extends ConsumerWidget {
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             itemCount: stadiums.length,
-            itemBuilder: (context, index) => FavouriteStadiumCardWidget(
-              key: ValueKey(stadiums[index].stadiumId),
-              stadium: stadiums[index],
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FavouriteStadiumCardWidget(
+                key: ValueKey(stadiums[index].stadiumId),
+                stadium: stadiums[index],
+              ),
             ),
           ),
         ),

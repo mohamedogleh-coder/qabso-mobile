@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../utill/card_list_shimmer_widget.dart';
 import '../../../utill/error_widget.dart';
 import '../user_shell.dart';
 import 'history_card_widget.dart';
 import 'history_group.dart';
 import 'history_model.dart';
 import 'history_notifier_provider.dart';
-import 'history_shimmer_widget.dart';
 
 /// The booking history on the user's home screen.
 ///
@@ -32,7 +32,7 @@ class HistoryHomeSectionWidget extends ConsumerWidget {
         .watch(historyNotifierProvider)
         .when(
           skipLoadingOnRefresh: false,
-          loading: () => const HistoryShimmerWidget(),
+          loading: () => const CardListShimmerWidget(showHeader: true),
           error: (error, stackTrace) => ErrorRetryWidget(
             errorMessage: error is PostgrestException
                 ? error.message

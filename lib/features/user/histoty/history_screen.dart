@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../utill/card_list_shimmer_widget.dart';
 import '../../../utill/error_widget.dart';
 import '../user_shell.dart';
 import 'history_card_widget.dart';
 import 'history_group.dart';
 import 'history_model.dart';
 import 'history_notifier_provider.dart';
-import 'history_shimmer_widget.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -36,7 +36,7 @@ class HistoryScreen extends ConsumerWidget {
               skipLoadingOnRefresh: false,
               loading: () => const Padding(
                 padding: EdgeInsets.all(12),
-                child: HistoryShimmerWidget(cards: 6),
+                child: CardListShimmerWidget(cards: 6),
               ),
               error: (error, stackTrace) => ErrorRetryWidget(
                 errorMessage: error is PostgrestException

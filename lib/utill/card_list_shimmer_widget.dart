@@ -1,34 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-/// The shape of the booking history while it is still being read.
+/// The shape of a list of cards while it is still being read.
 ///
-/// The blocks stand where the real ones will, so the section settles into
-/// place instead of jumping when the bookings arrive. Built the same way as
-/// the shimmer on the manager's home screen, so the whole app waits alike.
-class HistoryShimmerWidget extends StatelessWidget {
+/// The blocks stand where the real cards will, so a list settles into place
+/// instead of jumping when its rows arrive. Built the same way as the shimmer
+/// on the manager's home screen, so the whole app waits alike.
+class CardListShimmerWidget extends StatelessWidget {
   /// How many card blocks to draw.
   final int cards;
 
-  const HistoryShimmerWidget({super.key, this.cards = 3});
+  /// Draws a short block above the cards, where a section title goes.
+  final bool showHeader;
+
+  const CardListShimmerWidget({
+    super.key,
+    this.cards = 3,
+    this.showHeader = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Shimmer.fromColors(
-      baseColor: theme.highlightColor.withValues(alpha: 0.5),
+      baseColor: theme.hintColor.withValues(alpha: 0.5),
       highlightColor: theme.cardColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Where the section title and its count go.
-          _buildBlock(theme, height: 18, width: 160, radius: 6),
-          const SizedBox(height: 16),
-
+          if (showHeader) ...[
+            _buildBlock(theme, height: 18, width: 160, radius: 6),
+            const SizedBox(height: 16),
+          ],
           for (var index = 0; index < cards; index++) ...[
-            _buildBlock(theme, height: 76, radius: 16),
-            const SizedBox(height: 10),
+            _buildBlock(theme, height: 68, radius: 12),
+            const SizedBox(height: 8),
           ],
         ],
       ),

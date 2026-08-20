@@ -9,7 +9,6 @@ import '../../manager/stadium/stadium_information_screen.dart';
 import '../../manager/stadium/stadium_model.dart';
 import 'favourite_notifier_provider.dart';
 
-/// One saved stadium, with the heart that takes it off the list.
 class FavouriteStadiumCardWidget extends ConsumerStatefulWidget {
   const FavouriteStadiumCardWidget({super.key, required this.stadium});
 
@@ -24,8 +23,13 @@ class _FavouriteStadiumCardWidgetState
     extends ConsumerState<FavouriteStadiumCardWidget> {
   bool _isRemoving = false;
 
+  StadiumModel get _stadium => widget.stadium;
+
+  bool get _hasLocation =>
+      _stadium.latitude != null && _stadium.longitude != null;
+
   Future<void> _remove() async {
-    final stadiumId = widget.stadium.stadiumId;
+    final stadiumId = _stadium.stadiumId;
     if (stadiumId == null || _isRemoving) return;
 
     setState(() => _isRemoving = true);
@@ -43,84 +47,120 @@ class _FavouriteStadiumCardWidgetState
     }
   }
 
-  bool get _hasLocation =>
-      widget.stadium.latitude != null && widget.stadium.longitude != null;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: _openStadium,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(),
-              const Divider(height: 20),
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _buildFactsRow(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Opens the whole stadium. The stadium already in hand is passed along, so
-  /// the screen names itself without reading anything.
   void _openStadium() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) =>
-            StadiumInformationScreen(stadium: widget.stadium),
+        builder: (context) => StadiumInformationScreen(stadium: _stadium),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        onTap: _openStadium,
+        contentPadding: const EdgeInsets.only(left: 12, right: 4),
+        leading: _buildLeadingIcon(theme),
+        title: _buildTitle(theme),
+        subtitle: _buildSubtitle(theme),
+        trailing: _buildRemoveButton(theme),
+      ),
+    );
+  }
+
+  Widget _buildLeadingIcon(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        Symbols.stadium,
+        size: 20,
+        fill: 1,
+        color: theme.colorScheme.primary,
+      ),
+    );
+  }
+
+  Widget _buildTitle(ThemeData theme) {
     return Row(
       children: [
-        Container(
-          height: 44,
-          width: 44,
-          decoration: BoxDecoration(
-            color: colorScheme.primary.withValues(alpha: .12),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            Symbols.stadium,
-            fill: 1,
-            size: 26,
-            color: colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
         Expanded(
           child: Text(
-            widget.stadium.stadiumName,
-            style: theme.textTheme.headlineMedium?.copyWith(
+            _stadium.stadiumName,
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 8),
-        _buildRemoveButton(colorScheme),
       ],
     );
   }
 
-  Widget _buildRemoveButton(ColorScheme colorScheme) {
+  Widget _buildDistancePill(ThemeData theme, String label) {
+    return InkWell(
+      onTap: _hasLocation
+          ? () => showNotImplementedDialog(context: context)
+          : null,
+      borderRadius: BorderRadius.circular(20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _hasLocation ? Symbols.map : Symbols.location_off,
+            size: 14,
+            fill: 1,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _hasLocation ? label : "",
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubtitle(ThemeData theme) {
+    return Row(
+      mainAxisAlignment: .spaceBetween,
+      children: [
+        Row(
+          children: [
+            const Icon(Symbols.sports),
+            const SizedBox(width: 8),
+            Text(
+              _stadium.extraTime == 0
+                  ? "No extra time"
+                  : "${_stadium.extraTime} min extra",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+        if (_hasLocation) _buildDistancePill(theme, _distance ?? "On map"),
+      ],
+    );
+  }
+
+  Widget _buildRemoveButton(ThemeData theme) {
     if (_isRemoving) {
       return const Padding(
         padding: EdgeInsets.all(10),
@@ -135,12 +175,11 @@ class _FavouriteStadiumCardWidgetState
     return IconButton(
       onPressed: _remove,
       tooltip: "Remove from favourites",
-      icon: Icon(Symbols.favorite, fill: 1, color: colorScheme.error),
+      icon: Icon(Symbols.favorite, fill: 1, color: theme.colorScheme.error),
     );
   }
 
   String? get _distance {
-    final stadium = widget.stadium;
     final position = ref.watch(currentPositionProvider).value;
 
     if (position == null || !_hasLocation) return null;
@@ -148,80 +187,10 @@ class _FavouriteStadiumCardWidgetState
     final metres = Geolocator.distanceBetween(
       position.latitude,
       position.longitude,
-      stadium.latitude!,
-      stadium.longitude!,
+      _stadium.latitude!,
+      _stadium.longitude!,
     );
 
     return "${(metres / 1000).toStringAsFixed(1)} km";
-  }
-
-  Widget _buildFactsRow() {
-    final stadium = widget.stadium;
-    final distance = _distance;
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        _buildFact(
-          icon: Symbols.timer,
-          text: stadium.extraTime == 0
-              ? "No extra time"
-              : "${stadium.extraTime} min extra",
-        ),
-        _buildDot(),
-        _buildFact(
-          icon: Symbols.sliders,
-          text: stadium.allowHalfBooking ? "Half booking" : "Whole slot only",
-        ),
-        if (_hasLocation) ...[
-          _buildDot(),
-          _buildFact(
-            icon: Symbols.location_on,
-            text: distance ?? "On map",
-            onTap: () => showNotImplementedDialog(context: context),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildDot() {
-    final theme = Theme.of(context);
-
-    return Text(
-      "·",
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.outlineVariant,
-      ),
-    );
-  }
-
-  Widget _buildFact({
-    required IconData icon,
-    required String text,
-    VoidCallback? onTap,
-  }) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, fill: 1, color: theme.colorScheme.primary),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
